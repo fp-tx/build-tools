@@ -1,62 +1,53 @@
 {
-  "name": "@jacob-alford/build-tools",
-  "module": "./dist/index.js",
-  "type": "module",
-  "types": "./dist/index.d.ts",
+  "name": "@fp-tx/build-tools",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fp-tx/build-tools.git"
+  },
+  "license": "MIT",
+  "author": "Jacob Alford <jacob.alford@me.com>",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "node": "./dist/index.cjs",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "default": "./dist/index.global.js"
+      "node": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.js"
     }
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.13.1",
+    "@fp-tx/build-tools": "link:@fp-tx/build-tools",
+    "@types/glob": "^8.1.0",
     "@typescript-eslint/eslint-plugin": "^6.11.0",
     "@typescript-eslint/parser": "^6.11.0",
     "bun-types": "latest",
+    "esbuild-plugin-file-path-extensions": "^1.0.0",
     "eslint": "^8.54.0",
     "eslint-plugin-import": "^2.29.0",
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "eslint-plugin-unused-imports": "^3.0.0",
     "prettier": "^3.1.0",
     "prettier-plugin-jsdoc": "^1.1.1",
-    "tsup": "^7.3.0",
+    "tsup": "^8.0.0",
     "type-fest": "^4.8.1",
     "typescript": "^5.2.2"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "tsup": "^8.0.0"
   },
   "dependencies": {
     "colorette": "^2.0.20",
     "fp-ts": "^2.16.1",
-    "schemata-ts": "^2.2.0",
-    "ts-pattern": "^5.0.5"
-  },
-  "tsup": {
-    "entry": [
-      "src/index.ts"
-    ],
-    "format": [
-      "esm",
-      "cjs",
-      "iife"
-    ],
-    "dts": true,
-    "clean": true,
-    "sourcemap": true,
-    "treeShake": true,
-    "external": [
-      "fp-ts",
-      "ts-pattern",
-      "schemata-ts",
-      "type-fest",
-      "colorette"
-    ]
+    "schemata-ts": "^2.2.0"
   },
   "scripts": {
-    "build": "tsup"
+    "postinstall": "bun link",
+    "build": "tsup",
+    "check:dist": "attw --pack ./dist"
   }
 }
