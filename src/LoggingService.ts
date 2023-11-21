@@ -39,23 +39,23 @@ export const ColorConsoleLoggingServiceLive: LoggingService = new LoggingService
 export const log = (...args: ReadonlyArray<unknown>) =>
   pipe(
     RT.ask<LoggingService>(),
-    RT.flatMapTask((loggingService) => loggingService[LoggingServiceSymbol].log(...args)),
+    RT.flatMapTask(loggingService => loggingService[LoggingServiceSymbol].log(...args)),
   )
 
 export const error = (...args: ReadonlyArray<unknown>) =>
   pipe(
     RT.ask<LoggingService>(),
-    RT.flatMapTask((loggingService) => loggingService[LoggingServiceSymbol].error(...args)),
+    RT.flatMapTask(loggingService => loggingService[LoggingServiceSymbol].error(...args)),
   )
 
 export const warn = (...args: ReadonlyArray<unknown>) =>
   pipe(
     RT.ask<LoggingService>(),
-    RT.flatMapTask((loggingService) => loggingService[LoggingServiceSymbol].warn(...args)),
+    RT.flatMapTask(loggingService => loggingService[LoggingServiceSymbol].warn(...args)),
   )
 
 export const info = (...args: ReadonlyArray<unknown>) =>
   pipe(
     RT.ask<LoggingService>(),
-    RT.flatMapTask((loggingService) => loggingService[LoggingServiceSymbol].info(...args)),
+    RT.flatMapTask(loggingService => loggingService[LoggingServiceSymbol].info(...args)),
   )

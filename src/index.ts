@@ -7,31 +7,45 @@ import * as Build from './BuildService'
 import * as Config from './ConfigService'
 import * as File from './FileService'
 import * as Log from './LoggingService'
-
-export * as Build from './BuildService'
-export * as Config from './ConfigService'
-export * as File from './FileService'
-export * as Log from './LoggingService'
+import * as Src from './SourceService'
 
 const consoleLoggingService = Log.ColorConsoleLoggingServiceLive
 const fileService = File.FileServiceLive
 
 type TsupConfig = (overrideOptions: Options) => Promise<Options>
 
-export const makeConfig: (config: Config.ConfigParameters, extraConfig?: Options) => TsupConfig =
+export const makeConfig: (
+  config: Config.ConfigParameters,
+  extraConfig?: Options,
+) => TsupConfig =
   (config, extraConfig = {}) =>
-  (overrideOptions) =>
+  overrideOptions =>
     pipe(
-      Build.BuildServiceLive({ ...Config.ConfigServiceLive(config), ...consoleLoggingService, ...fileService }),
+      TE.of(Config.ConfigServiceLive(config)),
+      TE.flatMap(configService =>
+        Build.BuildServiceLive({
+          ...Config.ConfigServiceLive(config),
+          ...Src.SourceServiceLive({
+            ...configService,
+            ...fileService,
+          }),
+          ...consoleLoggingService,
+          ...fileService,
+        }),
+      ),
       TE.matchEW(
-        (err) =>
+        err =>
           pipe(
             Log.error(err)(consoleLoggingService),
             T.flatMapIO(() => () => {
               throw err
             }),
           ),
-        flow(Build.configuration, (_) => ({ ..._, ...extraConfig, ...overrideOptions }), T.of),
+        flow(
+          Build.configuration,
+          _ => ({ ..._, ...extraConfig, ...overrideOptions }),
+          T.of,
+        ),
       ),
-      (t) => t(),
+      t => t(),
     )
