@@ -1,8 +1,8 @@
-import { type Endomorphism } from 'fp-ts/lib/Endomorphism.js'
-import { identity, pipe } from 'fp-ts/lib/function.js'
+import { flow, identity, pipe } from 'fp-ts/lib/function.js'
+import * as O from 'fp-ts/lib/Option.js'
 import type * as R from 'fp-ts/lib/Reader.js'
 import * as RTE from 'fp-ts/lib/ReaderTaskEither.js'
-import type * as RR from 'fp-ts/lib/ReadonlyRecord.js'
+import * as RA from 'fp-ts/lib/ReadonlyArray.js'
 import type fs from 'fs'
 import { type Options } from 'tsup'
 
@@ -17,11 +17,11 @@ export type ConfigParameters = {
   readonly buildType?: 'cjs' | 'esm' | 'dual'
 
   /**
-   * Splits module types into distinct directories
+   * Include IIFE generation for browser script tags (that don't support module scripts)
    *
-   * @default true
+   * @default false
    */
-  readonly legacy?: boolean
+  readonly iife?: boolean
 
   /**
    * The source directory to read from
@@ -33,35 +33,56 @@ export type ConfigParameters = {
   /**
    * The current working directory
    *
-   * @default "."
+   * @default '.'
    */
   readonly basePath?: string
 
   /**
    * A function which maps resolved entrypoints in "src" to their respective output paths.
    *
-   * Appends result of `getEntrypoints` to `basePath <> srcDir` to get the full path to the entrypoint.
+   * Appends result of `getEntrypoints` to `basePath <> srcDir` to get the full path to
+   * the entrypoint.
+   *
+   * @example
+   *   // default behavior
+   *   RA.filterMap(
+   *     flow(
+   *       O.fromPredicate(dirInt => dirInt.isFile()),
+   *       O.map(dirInt => dirInt.name),
+   *       O.filter(name => name.endsWith('.ts') || name.endsWith('.tsx')),
+   *       O.filter(name => !name.endsWith('.d.ts')),
+   *       O.filter(
+   *         name =>
+   *           !name.includes('spec') &&
+   *           !name.includes('test') &&
+   *           !name.includes('internal'),
+   *       ),
+   *     ),
+   *   )
    */
-  readonly getEntrypoints: (srcDir: ReadonlyArray<fs.Dirent>) => ReadonlyArray<string>
+  readonly getEntrypoints?: (srcDir: ReadonlyArray<fs.Dirent>) => ReadonlyArray<string>
 
   /**
-   * A function which allows mapping a package.json value to a new value for the purpose of occluding various fields, i.e. "scripts"
+   * A function which allows mapping a package.json value to a new value for the purpose
+   * of occluding various fields, i.e. "scripts"
    *
    * @default identity
    */
-  readonly occludePackage?: Endomorphism<RR.ReadonlyRecord<string, unknown>>
+  readonly occludePackage?: (
+    pkg: Readonly<Record<string, unknown>>,
+  ) => Readonly<Record<string, unknown>>
 
   /**
-   * A list of files to copy into dist
+   * A list of files to copy into dist, path is relative to "basePath"
    *
-   * @default []
+   * @default ['README.md', 'LICENSE']
    */
   readonly copyFiles?: ReadonlyArray<string>
 
   /**
-   * The output directory
+   * The output directory, path is relative to "basePath"
    *
-   * @default "dist"
+   * @default 'dist'
    */
   readonly outDir?: string
 
@@ -77,7 +98,7 @@ export type ConfigParameters = {
    *
    * @default false
    */
-  readonly splitChunks?: Options['splitting']
+  readonly splitting?: Options['splitting']
 
   /**
    * Whether to emit sourcemaps
@@ -92,44 +113,90 @@ export type ConfigParameters = {
    * @default true
    */
   readonly dts?: Options['dts']
+
+  /**
+   * Whether to emit experimental declaration files
+   *
+   * @default false
+   */
+  readonly experimentalDts?: Options['experimentalDts']
+
+  /**
+   * Whether to cleanup dist before building
+   *
+   * @default true
+   */
+  readonly clean?: Options['clean']
+
+  /**
+   * Target platform
+   *
+   * @default 'neutral'
+   */
+  readonly platform?: Options['platform']
 }
+
+const defaultGetEntrypoints: NonNullable<ConfigParameters['getEntrypoints']> =
+  RA.filterMap(
+    flow(
+      O.fromPredicate(dirInt => dirInt.isFile()),
+      O.map(dirInt => dirInt.name),
+      O.filter(name => name.endsWith('.ts') || name.endsWith('.tsx')),
+      O.filter(name => !name.endsWith('.d.ts')),
+      O.filter(
+        name =>
+          !name.includes('spec') && !name.includes('test') && !name.includes('internal'),
+      ),
+    ),
+  )
 
 export class ConfigService {
   [ConfigServiceSymbol]: Required<ConfigParameters>
   constructor({
     buildType = 'dual',
-    legacy = true,
     srcDir = 'src',
     occludePackage = identity,
-    copyFiles = [],
+    copyFiles = ['README.md', 'LICENSE'],
     basePath = '.',
     outDir = 'dist',
-    splitChunks = false,
+    splitting = false,
     minify = false,
     dts = true,
     sourcemap = true,
-    ...rest
+    iife = false,
+    clean: cleanup = true,
+    platform = 'neutral',
+    experimentalDts = false,
+    getEntrypoints = defaultGetEntrypoints,
   }: ConfigParameters) {
     this[ConfigServiceSymbol] = {
       buildType,
-      legacy,
       srcDir,
       occludePackage,
       copyFiles,
       basePath,
       outDir,
-      splitChunks,
+      splitting,
       minify,
       dts,
+      platform,
       sourcemap,
-      ...rest,
+      iife,
+      experimentalDts,
+      getEntrypoints,
+      clean: cleanup,
     }
   }
 }
 
-export const ConfigServiceLive: R.Reader<ConfigParameters, ConfigService> = (config) => new ConfigService(config)
+export const ConfigServiceLive: R.Reader<ConfigParameters, ConfigService> = config =>
+  new ConfigService(config)
 
-export const config: RTE.ReaderTaskEither<ConfigService, never, ConfigService[typeof ConfigServiceSymbol]> = pipe(
+export const config: RTE.ReaderTaskEither<
+  ConfigService,
+  never,
+  ConfigService[typeof ConfigServiceSymbol]
+> = pipe(
   RTE.ask<ConfigService>(),
-  RTE.map((service) => service[ConfigServiceSymbol]),
+  RTE.map(service => service[ConfigServiceSymbol]),
 )
