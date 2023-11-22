@@ -12,7 +12,9 @@ import * as Src from './SourceService'
 const consoleLoggingService = Log.ColorConsoleLoggingServiceLive
 const fileService = File.FileServiceLive
 
-type TsupConfig = (overrideOptions: Options) => Promise<Options>
+export { type Options } from 'tsup'
+
+export type TsupConfig = (overrideOptions: Options) => Promise<Options>
 
 export const makeConfig: (
   config: Config.ConfigParameters,
