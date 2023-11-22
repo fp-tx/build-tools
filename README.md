@@ -3,7 +3,7 @@
   <picture>
     <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/fp-tx/build-tools/assets/build-tools-logo-dark.png">
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/fp-tx/build-tools/assets/build-tools-logo-light.png">
-    <img alt="schemata-ts" src="https://raw.githubusercontent.com/fp-tx/build-tools/assets/build-tools-logo-purple.png">
+    <img alt="@fp-tx/build-tools" src="https://raw.githubusercontent.com/fp-tx/build-tools/assets/build-tools-logo-purple.png">
   </picture>
 </div>
 <br>
