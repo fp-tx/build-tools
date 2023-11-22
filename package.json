@@ -31,8 +31,11 @@
     "eslint-plugin-import": "^2.29.0",
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "eslint-plugin-unused-imports": "^3.0.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.1.0",
     "prettier": "^3.1.0",
     "prettier-plugin-jsdoc": "^1.1.1",
+    "tsc-files": "^1.1.4",
     "tsup": "^8.0.0",
     "type-fest": "^4.8.1",
     "typescript": "^5.2.2"
@@ -46,8 +49,23 @@
     "schemata-ts": "^2.2.0"
   },
   "scripts": {
-    "postinstall": "bun link",
+    "postinstall": "bun link && husky install",
     "build": "tsup",
-    "check:dist": "attw --pack ./dist"
+    "build:check": "attw --pack ./dist",
+    "prerelease": "bun run build && bun run build:check",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch",
+    "lint": "eslint \"src/**/*.ts\"",
+    "lint:fix": "eslint --fix \"src/**/*.ts\"",
+    "prettier": "prettier \"./src/**/*.ts\"",
+    "prettier:fix": "prettier --write \"./src/**/*.ts"
+  },
+  "lint-staged": {
+    "src/**/*.ts": [
+      "tsc-files",
+      "prettier --write",
+      "eslint --fix-type layout --fix --cache",
+      "yarn prerelease"
+    ]
   }
 }
