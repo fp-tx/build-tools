@@ -95,7 +95,10 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
                 main,
                 module,
                 exports,
-                ...config.occludePackage(rest),
+                ...pipe(
+                  rest,
+                  RR.filterWithIndex(key => !config.omittedPackageKeys.includes(key)),
+                ),
               }),
             ),
             RTE.flatMapEither(occludedPackage =>

@@ -1,10 +1,11 @@
-import { flow, identity, pipe } from 'fp-ts/lib/function.js'
+import { flow, pipe } from 'fp-ts/lib/function.js'
 import * as O from 'fp-ts/lib/Option.js'
 import type * as R from 'fp-ts/lib/Reader.js'
 import * as RTE from 'fp-ts/lib/ReaderTaskEither.js'
 import * as RA from 'fp-ts/lib/ReadonlyArray.js'
 import type fs from 'fs'
 import { type Options } from 'tsup'
+import { type PackageJson } from 'type-fest'
 
 const ConfigServiceSymbol = Symbol('ConfigService')
 
@@ -63,14 +64,13 @@ export type ConfigParameters = {
   readonly getEntrypoints?: (srcDir: ReadonlyArray<fs.Dirent>) => ReadonlyArray<string>
 
   /**
-   * A function which allows mapping a package.json value to a new value for the purpose
-   * of occluding various fields, i.e. "scripts"
+   * A list of package.json keys to omit from the copied file in dist
    *
-   * @default identity
+   * @default ['devDependencies', 'scripts', 'lint-staged']
    */
-  readonly occludePackage?: (
-    pkg: Readonly<Record<string, unknown>>,
-  ) => Readonly<Record<string, unknown>>
+  readonly omittedPackageKeys?: ReadonlyArray<
+    (string & {}) | keyof (PackageJson.PackageJsonStandard | PackageJson.PublishConfig)
+  >
 
   /**
    * A list of files to copy into dist, path is relative to "basePath"
@@ -155,7 +155,7 @@ export class ConfigService {
   constructor({
     buildType = 'dual',
     srcDir = 'src',
-    occludePackage = identity,
+    omittedPackageKeys = ['devDependencies', 'scripts', 'lint-staged'],
     copyFiles = ['README.md', 'LICENSE'],
     basePath = '.',
     outDir = 'dist',
@@ -172,7 +172,7 @@ export class ConfigService {
     this[ConfigServiceSymbol] = {
       buildType,
       srcDir,
-      occludePackage,
+      omittedPackageKeys,
       copyFiles,
       basePath,
       outDir,
