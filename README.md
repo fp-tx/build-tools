@@ -1,9 +1,7 @@
 <br>
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/fp-tx/build-tools/assets/build-tools-banner-dark.png">
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/fp-tx/build-tools/assets/build-tools-banner-light.png">
-    <img alt="@fp-tx/build-tools" src="https://raw.githubusercontent.com/fp-tx/build-tools/assets/build-tools-banner-safe.png">
+    <img alt="@fp-tx/build-tools" src="./assets/build-tools-banner.png">
   </picture>
 </div>
 <br>
