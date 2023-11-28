@@ -1,7 +1,7 @@
 <br>
 <div align="center">
   <picture>
-    <img alt="@fp-tx/build-tools" src="./assets/build-tools-banner.png">
+    <img alt="@fp-tx/build-tools" src="https://github.com/fp-tx/build-tools/assets/7153123/a201ed6a-8d81-4d3b-8e3e-17ab71ca4247">
   </picture>
 </div>
 <br>
