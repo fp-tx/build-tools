@@ -14,19 +14,19 @@
 
 ## Configuration Parameters
 
-| Parameter          | Type     | Description                                                                           | Default                        |
-| ------------------ | -------- | ------------------------------------------------------------------------------------- | ------------------------------ |
-| iife               | boolean  | Include IIFE generation for browser script tags (that don't support module scripts)   | false                          |
-| srcDir             | string   | The source directory to read from                                                     | 'src'                          |
-| basePath           | string   | The current working directory                                                         | '.'                            |
-| getEntrypoints     | function | A function which maps resolved entrypoints in "src" to their respective output paths. | all src `.ts(x?)` files        |
-| omittedPackageKeys | array    | Array of keys to omit from the package.json file                                      | ["devDependencies", "scripts"] |
-| copyFiles          | boolean  | Whether to copy non-typescript files                                                  | []                             |
-| outDir             | string   | The output directory                                                                  | dist                           |
-| minify             | boolean  | Whether to minify the output                                                          | false                          |
-| splitting          | boolean  | Whether to enable code splitting                                                      | false                          |
-| sourcemap          | boolean  | Whether to generate source maps                                                       | true                           |
-| dts                | boolean  | Whether to generate declaration files                                                 | true                           |
-| experimentalDts    | boolean  | Whether to emit experimental declaration files                                        | false                          |
-| clean              | boolean  | Whether to cleanup dist before building                                               | true                           |
-| platform           | string   | Target platform                                                                       | 'neutral'                      |
+| Parameter          | Type     | Description                                                                           | Default                          |
+| ------------------ | -------- | ------------------------------------------------------------------------------------- | -------------------------------- |
+| iife               | boolean  | Include IIFE generation for browser script tags (that don't support module scripts)   | `false`                          |
+| srcDir             | string   | The source directory to read from                                                     | `'src'`                          |
+| basePath           | string   | The current working directory                                                         | `'.'`                            |
+| getEntrypoints     | function | A function which maps resolved entrypoints in "src" to their respective output paths. | all src `.ts(x?)` files          |
+| omittedPackageKeys | array    | Array of keys to omit from the package.json file                                      | `["devDependencies", "scripts"]` |
+| copyFiles          | boolean  | Whether to copy non-typescript files                                                  | `[]`                             |
+| outDir             | string   | The output directory                                                                  | `dist`                           |
+| minify             | boolean  | Whether to minify the output                                                          | `false`                          |
+| splitting          | boolean  | Whether to enable code splitting                                                      | `false`                          |
+| sourcemap          | boolean  | Whether to generate source maps                                                       | `true`                           |
+| dts                | boolean  | Whether to generate declaration files                                                 | `true`                           |
+| experimentalDts    | boolean  | Whether to emit experimental declaration files                                        | `false`                          |
+| clean              | boolean  | Whether to cleanup dist before building                                               | `true`                           |
+| platform           | string   | Target platform                                                                       | `'neutral'`                      |
