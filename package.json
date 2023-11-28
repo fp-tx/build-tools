@@ -17,7 +17,8 @@
       "node": "./dist/index.js",
       "import": "./dist/index.mjs",
       "default": "./dist/index.js"
-    }
+    },
+    "./package.json": "./dist/package.json"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.13.1",
@@ -25,7 +26,6 @@
     "@types/glob": "^8.1.0",
     "@typescript-eslint/eslint-plugin": "^6.11.0",
     "@typescript-eslint/parser": "^6.11.0",
-    "bun-types": "latest",
     "esbuild-plugin-file-path-extensions": "^1.0.0",
     "eslint": "^8.54.0",
     "eslint-plugin-import": "^2.29.0",
@@ -53,6 +53,8 @@
     "build": "tsup",
     "build:check": "attw --pack ./dist",
     "prerelease": "pnpm run build && pnpm run build:check",
+    "prerelease:main": "pnpm run prerelease",
+    "release:main": "pnpm run prerelease && npm publish ./dist --tag main --dry-run",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "typecheck:watch": "tsc --noEmit --watch",
     "lint": "eslint \"src/**/*.ts\"",
