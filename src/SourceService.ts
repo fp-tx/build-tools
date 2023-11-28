@@ -1,10 +1,10 @@
 import * as E from 'fp-ts/lib/Either.js'
-import { flow, pipe } from 'fp-ts/lib/function.js'
+import { pipe } from 'fp-ts/lib/function.js'
 import * as R from 'fp-ts/lib/Reader.js'
 import * as RTE from 'fp-ts/lib/ReaderTaskEither.js'
 import type * as RR from 'fp-ts/lib/ReadonlyRecord.js'
 import * as TE from 'fp-ts/lib/TaskEither.js'
-import glob from 'glob'
+import { glob, type GlobOptionsWithFileTypesUnset } from 'glob'
 import path from 'path'
 import type * as TCE from 'schemata-ts/TranscodeError'
 import * as TC from 'schemata-ts/Transcoder'
@@ -44,16 +44,12 @@ const rewriteSource: (srcDir: string, file: string) => (source: string) => strin
 
 const getGlob: (
   pattern: string,
-  options: glob.IOptions,
-) => TE.TaskEither<File.FileServiceError, ReadonlyArray<string>> = flow(
-  TE.taskify(
-    (
-      pattern: string,
-      options: glob.IOptions,
-      callback: (err: null | Error, matches: ReadonlyArray<string>) => void,
-    ) => glob(pattern, options, callback),
+  options: GlobOptionsWithFileTypesUnset,
+) => TE.TaskEither<File.FileServiceError, ReadonlyArray<string>> = pipe(
+  TE.tryCatchK(
+    (pattern: string, options: GlobOptionsWithFileTypesUnset) => glob(pattern, options),
+    err => File.FileServiceError.of(err instanceof Error ? err : new Error(String(err))),
   ),
-  TE.mapLeft(File.FileServiceError.of),
 )
 
 export const SourceServiceLive: R.Reader<
