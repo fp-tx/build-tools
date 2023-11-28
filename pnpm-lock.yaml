@@ -27,9 +27,6 @@ devDependencies:
   '@typescript-eslint/parser':
     specifier: ^6.11.0
     version: 6.11.0(eslint@8.54.0)(typescript@5.2.2)
-  bun-types:
-    specifier: latest
-    version: 1.0.12
   esbuild-plugin-file-path-extensions:
     specifier: ^1.0.0
     version: 1.0.0
@@ -895,10 +892,6 @@ packages:
     resolution: {integrity: sha512-qwVpFEHNfhYJIzNRBvd2C1kyo6jz3ZSMPyyuR47OPdiKWlbYnZNyDWuyR175qDnAJLiCo5fBBqPb3RiXgWlkOQ==}
     dependencies:
       semver: 7.5.4
-    dev: true
-
-  /bun-types@1.0.12:
-    resolution: {integrity: sha512-jGXEQ9pkp1kwdgYY6X6SPP5V4kxEGGZQaZMEKUVeJ7T1/XFyrAwL4AeaM4lSvjYqwsPXIDdKCFgw5M1KLoK4qw==}
     dev: true
 
   /bundle-require@4.0.2(esbuild@0.19.8):
