@@ -31,6 +31,26 @@ const config = makeConfig(
 export default config
 ```
 
+## Installation
+
+### PNPM
+
+```console
+pnpm add -D tsup @fp-tx/build-tools
+```
+
+### Yarn
+
+```console
+yarn add -D tsup @fp-tx/build-tools
+```
+
+### NPM
+
+```console
+npm install -D tsup @fp-tx/build-tools
+```
+
 ## Configuration Parameters
 
 | Parameter          | Type     | Description                                                                           | Default                          |
