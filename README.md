@@ -10,6 +10,27 @@
 
 `@fp-tx/build-tools` is a thin wrapper around `tsup` for the purpose of building dual ESM/CJS packages. It contains a chief export `makeConfig` which will read from a configurable source directory and determine which files to include as entrypoints. Using these entrypoints, it also adds a dynamic "exports" field with `import` and `default` fields based on the determined entrypoints and module type (determined by `package.json > type`).
 
+## Usage
+
+```ts
+// tsup.config.ts
+import { makeConfig } from '@fp-tx/build-tools'
+
+const config = makeConfig(
+  // Configuration Parameters
+  {
+    getEntrypoints: srcFiles => srcFiles.map(file => file.name),
+  },
+  // Tsup options (overrides the above)
+  {
+    tsconfig: './tsconfig.build.json',
+  },
+  // CLI options override both of the above
+)
+
+export default config
+```
+
 ## Configuration Parameters
 
 | Parameter          | Type     | Description                                                                           | Default                          |

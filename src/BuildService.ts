@@ -1,3 +1,4 @@
+import * as color from 'colorette'
 import { esbuildPluginFilePathExtensions } from 'esbuild-plugin-file-path-extensions'
 import * as E from 'fp-ts/lib/Either.js'
 import { pipe, tuple } from 'fp-ts/lib/function.js'
@@ -38,7 +39,7 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
   BuildService
 > = pipe(
   RTE.Do,
-  RTE.apS('config', config),
+  RTE.apSW('config', config),
   RTE.flatMap(({ config }) =>
     pipe(
       RTE.Do,
@@ -135,20 +136,25 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
   RTE.bindW('onSuccess', ({ config, packageJson, extraFiles }) =>
     pipe(
       RTE.Do,
-      RTE.apS('fileService', RTE.ask<Files.FileService>()),
+      RTE.apSW('fileService', RTE.ask<Files.FileService>()),
       RTE.apSW('loggingService', RTE.ask<Log.LoggingService>()),
       RTE.apSW('srcService', RTE.ask<Src.SourceService>()),
       RTE.map(
         ({ fileService, loggingService, srcService }): T.Task<void> =>
           pipe(
             RTE.Do,
+            RTE.tapReaderTask(() =>
+              Log.info(color.magenta('PCK') + color.whiteBright(' Pack Start')),
+            ),
             RTE.tap(() =>
               Files.writeFile(
                 path.join(config.basePath, config.outDir, 'package.json'),
                 packageJson,
               ),
             ),
-            RTE.tapReaderTask(() => Log.info('✅ Copied Package JSON')),
+            RTE.tapReaderTask(() =>
+              Log.info(color.magenta('PCK') + color.whiteBright(' Copied Package JSON')),
+            ),
             RTE.tapReaderTask(() =>
               pipe(
                 RR.toEntries(extraFiles),
@@ -166,14 +172,15 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
                     RT.Do,
                     RT.tap(() =>
                       left.length > 0
-                        ? Log.warn(`Failed to copy ${left.length} files:`, ...left)
+                        ? Log.warn(`PCK Failed to copy ${left.length} files:`, ...left)
                         : RT.of(void 0),
                     ),
                     RT.tap(() =>
                       right.length > 0
                         ? Log.info(
-                            `Successfully copied ${right.length} extra files:`,
-                            ...right,
+                            color.magenta('PCK') +
+                              color.whiteBright(` Copied ${right.length} extra files:`),
+                            ...right.map(color.blue),
                           )
                         : RT.of(void 0),
                     ),
@@ -188,9 +195,15 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
                 { recursive: true },
               ),
             ),
-            RTE.tapReaderTask(() => Log.info('✅ Successfully copied source files')),
+            RTE.tapReaderTask(() =>
+              Log.info(color.magenta('PCK') + color.whiteBright(' Copied source files')),
+            ),
             RTE.tap(() => Src.rewriteSourceMaps),
-            RTE.tapReaderTask(() => Log.info('✅ Successfully re-pointed source maps')),
+            RTE.tapReaderTask(() =>
+              Log.info(
+                color.magenta('PCK') + color.whiteBright(' Re-pointed source maps'),
+              ),
+            ),
             RTE.matchEW(
               err =>
                 pipe(
@@ -199,7 +212,8 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
                     process.exit(1)
                   }),
                 ),
-              () => Log.info('✅ Post-pack complete'),
+              () =>
+                Log.info(color.magenta('PCK') + color.whiteBright(' ⚡️ Pack Success')),
             ),
             rt => rt({ ...loggingService, ...fileService, ...srcService }),
           ),
