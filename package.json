@@ -62,6 +62,7 @@
     "typecheck:watch": "tsc --noEmit --watch",
     "commitlint": "commitlint --edit",
     "lint": "eslint \"src/**/*.ts\"",
+    "lint:staged": "lint-staged",
     "lint:fix": "eslint --fix \"src/**/*.ts\"",
     "prettier": "prettier \"./src/**/*.ts\"",
     "prettier:fix": "prettier --write \"./src/**/*.ts"
