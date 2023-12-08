@@ -1,6 +1,6 @@
 {
   "name": "@fp-tx/build-tools",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/fp-tx/build-tools.git"
