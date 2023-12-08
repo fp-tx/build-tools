@@ -57,7 +57,6 @@
     "build": "tsup",
     "build:check": "attw --pack ./dist",
     "prerelease": "pnpm run build && pnpm run build:check",
-    "prerelease:main": "pnpm run prerelease",
     "release:main": "pnpm run prerelease && npm publish ./dist --tag main",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "typecheck:watch": "tsc --noEmit --watch",
