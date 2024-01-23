@@ -32,7 +32,7 @@ jobs:
         id: bumping-version
         uses: jpb06/bump-package@latest
         with:
-          major-keywords:
+          major-keywords: PUBLISH MAJOR VERSION
           minor-keywords: BREAKING CHANGE,feat
           patch-keywords: build,chore,ci,docs,fix,perf,refactor,revert,style,test
 
