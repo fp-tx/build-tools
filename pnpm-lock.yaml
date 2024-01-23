@@ -13,6 +13,9 @@ dependencies:
   schemata-ts:
     specifier: ^2.2.0
     version: 2.2.0(fast-check@3.14.0)
+  type-fest:
+    specifier: ^4.10.0
+    version: 4.10.0
 
 devDependencies:
   '@arethetypeswrong/cli':
@@ -72,9 +75,6 @@ devDependencies:
   tsup:
     specifier: ^8.0.0
     version: 8.0.0(typescript@5.2.2)
-  type-fest:
-    specifier: ^4.8.1
-    version: 4.8.1
   typescript:
     specifier: ^5.2.2
     version: 5.2.2
@@ -3911,10 +3911,10 @@ packages:
     resolution: {integrity: sha512-tLq3bSNx+xSpwvAJnzrK0Ep5CLNWjvFTOp71URMaAEWBfRb9nnJiBoUe0tF8bI4ZFO3omgBR6NvnbzVUT3Ly4g==}
     engines: {node: '>=14.16'}
 
-  /type-fest@4.8.1:
-    resolution: {integrity: sha512-ShaaYnjf+0etG8W/FumARKMjjIToy/haCaTjN2dvcewOSoNqCQzdgG7m2JVOlM5qndGTHjkvsrWZs+k/2Z7E0Q==}
+  /type-fest@4.10.0:
+    resolution: {integrity: sha512-NPaKJsb4wyJ16qc8zBQrWswLKv/YirgBFykvUQ1Iajt2wd+twC8E4hFXdlIXqiMl6kWA0zY8tUJ9ELVAdu5h7w==}
     engines: {node: '>=16'}
-    dev: true
+    dev: false
 
   /typed-array-buffer@1.0.0:
     resolution: {integrity: sha512-Y8KTSIglk9OZEr8zywiIHG/kmQ7KWyjseXs1CbSo8vC42w7hg2HgYTxSWwP0+is7bWDc1H+Fo026CpHFwm8tkw==}

@@ -40,7 +40,6 @@
     "prettier-plugin-jsdoc": "^1.1.1",
     "tsc-files": "^1.1.4",
     "tsup": "^8.0.0",
-    "type-fest": "^4.8.1",
     "typescript": "^5.2.2"
   },
   "peerDependencies": {
@@ -50,7 +49,8 @@
     "colorette": "^2.0.20",
     "fp-ts": "^2.16.1",
     "glob": "^10.3.10",
-    "schemata-ts": "^2.2.0"
+    "schemata-ts": "^2.2.0",
+    "type-fest": "^4.10.0"
   },
   "scripts": {
     "postinstall": "husky install",
