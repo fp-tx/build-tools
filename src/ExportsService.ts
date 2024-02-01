@@ -14,12 +14,12 @@ type Exports = NonNullable<PackageJson['exports']>
 
 export class ExportsService {
   [ExportsServiceSymbol]: readonly [
-    exports: Exports,
-    main?: string | undefined,
-    module?: string | undefined,
+    exports: Exports | undefined,
+    main: string | undefined,
+    module: string | undefined,
   ]
   constructor(
-    pkgExports: Exports,
+    pkgExports?: Exports,
     main?: string | undefined,
     module?: string | undefined,
   ) {
@@ -28,7 +28,7 @@ export class ExportsService {
   static of: (
     main?: string | undefined,
     module?: string | undefined,
-  ) => (pkgExports: Exports) => ExportsService = (main, module) => pkgExports =>
+  ) => (pkgExports?: Exports) => ExportsService = (main, module) => pkgExports =>
     new ExportsService(pkgExports, main, module)
 }
 
@@ -70,23 +70,36 @@ const DualModuleExports: RTE.ReaderTaskEither<
 > = pipe(
   Common,
   RTE.map(({ config, deps }) =>
-    pipe(
-      deps.files,
-      RA.foldMap(RecordMonoid)(file =>
-        RR.singleton(exportKey(file), {
-          ...(config.iife
-            ? { import: tsToJs(file), require: tsToCjs(file), default: tsToGlobal(file) }
-            : {
-                import: tsToJs(file),
-                default: tsToCjs(file),
-              }),
-        }),
-      ),
-      ExportsService.of(
-        deps.files.includes('index.ts') ? './index.cjs' : undefined,
-        deps.files.includes('index.ts') ? './index.js' : undefined,
-      ),
-    ),
+    config.buildMode.type === 'Single'
+      ? ExportsService.of(
+          tsToCjs(config.buildMode.entrypoint),
+          tsToJs(config.buildMode.entrypoint),
+        )(undefined)
+      : pipe(
+          deps.files,
+          RA.foldMap(RecordMonoid)(file =>
+            RR.singleton(exportKey(file), {
+              ...(config.iife
+                ? {
+                    import: tsToJs(file),
+                    require: tsToCjs(file),
+                    default: tsToGlobal(file),
+                  }
+                : {
+                    import: tsToJs(file),
+                    default: tsToCjs(file),
+                  }),
+            }),
+          ),
+          ExportsService.of(
+            config.buildMode.indexExport === undefined
+              ? undefined
+              : tsToCjs(config.buildMode.indexExport),
+            config.buildMode.indexExport === undefined
+              ? undefined
+              : tsToJs(config.buildMode.indexExport),
+          ),
+        ),
   ),
 )
 
@@ -97,23 +110,36 @@ const DualCommonExports: RTE.ReaderTaskEither<
 > = pipe(
   Common,
   RTE.map(({ config, deps }) =>
-    pipe(
-      deps.files,
-      RA.foldMap(RecordMonoid)(file =>
-        RR.singleton(exportKey(file), {
-          ...(config.iife
-            ? { import: tsToMjs(file), require: tsToJs(file), default: tsToGlobal(file) }
-            : {
-                import: tsToMjs(file),
-                default: tsToJs(file),
-              }),
-        }),
-      ),
-      ExportsService.of(
-        deps.files.includes('index.ts') ? './index.js' : undefined,
-        deps.files.includes('index.ts') ? './index.mjs' : undefined,
-      ),
-    ),
+    config.buildMode.type === 'Single'
+      ? ExportsService.of(
+          tsToJs(config.buildMode.entrypoint),
+          tsToMjs(config.buildMode.entrypoint),
+        )(undefined)
+      : pipe(
+          deps.files,
+          RA.foldMap(RecordMonoid)(file =>
+            RR.singleton(exportKey(file), {
+              ...(config.iife
+                ? {
+                    import: tsToMjs(file),
+                    require: tsToJs(file),
+                    default: tsToGlobal(file),
+                  }
+                : {
+                    import: tsToMjs(file),
+                    default: tsToJs(file),
+                  }),
+            }),
+          ),
+          ExportsService.of(
+            config.buildMode.indexExport === undefined
+              ? undefined
+              : tsToJs(config.buildMode.indexExport),
+            config.buildMode.indexExport === undefined
+              ? undefined
+              : tsToMjs(config.buildMode.indexExport),
+          ),
+        ),
   ),
 )
 
@@ -124,19 +150,25 @@ const CjsModuleExports: RTE.ReaderTaskEither<
 > = pipe(
   Common,
   RTE.map(({ config, deps }) =>
-    pipe(
-      deps.files,
-      RA.foldMap(RecordMonoid)(file =>
-        RR.singleton(exportKey(file), {
-          ...(config.iife
-            ? { require: tsToCjs(file), default: tsToGlobal(file) }
-            : {
-                default: tsToCjs(file),
-              }),
-        }),
-      ),
-      ExportsService.of(deps.files.includes('index.ts') ? './index.cjs' : undefined),
-    ),
+    config.buildMode.type === 'Single'
+      ? ExportsService.of(tsToCjs(config.buildMode.entrypoint))(undefined)
+      : pipe(
+          deps.files,
+          RA.foldMap(RecordMonoid)(file =>
+            RR.singleton(exportKey(file), {
+              ...(config.iife
+                ? { require: tsToCjs(file), default: tsToGlobal(file) }
+                : {
+                    default: tsToCjs(file),
+                  }),
+            }),
+          ),
+          ExportsService.of(
+            config.buildMode.indexExport === undefined
+              ? undefined
+              : tsToCjs(config.buildMode.indexExport),
+          ),
+        ),
   ),
 )
 
@@ -147,19 +179,25 @@ const CjsCommonExports: RTE.ReaderTaskEither<
 > = pipe(
   Common,
   RTE.map(({ config, deps }) =>
-    pipe(
-      deps.files,
-      RA.foldMap(RecordMonoid)(file =>
-        RR.singleton(exportKey(file), {
-          ...(config.iife
-            ? { require: tsToJs(file), default: tsToGlobal(file) }
-            : {
-                default: tsToJs(file),
-              }),
-        }),
-      ),
-      ExportsService.of(deps.files.includes('index.ts') ? './index.js' : undefined),
-    ),
+    config.buildMode.type === 'Single'
+      ? ExportsService.of(tsToJs(config.buildMode.entrypoint))(undefined)
+      : pipe(
+          deps.files,
+          RA.foldMap(RecordMonoid)(file =>
+            RR.singleton(exportKey(file), {
+              ...(config.iife
+                ? { require: tsToJs(file), default: tsToGlobal(file) }
+                : {
+                    default: tsToJs(file),
+                  }),
+            }),
+          ),
+          ExportsService.of(
+            config.buildMode.indexExport === undefined
+              ? undefined
+              : tsToJs(config.buildMode.indexExport),
+          ),
+        ),
   ),
 )
 
@@ -170,22 +208,26 @@ const EsmModuleExports: RTE.ReaderTaskEither<
 > = pipe(
   Common,
   RTE.map(({ config, deps }) =>
-    pipe(
-      deps.files,
-      RA.foldMap(RecordMonoid)(file =>
-        RR.singleton(exportKey(file), {
-          ...(config.iife
-            ? { import: tsToJs(file), default: tsToGlobal(file) }
-            : {
-                default: tsToJs(file),
-              }),
-        }),
-      ),
-      ExportsService.of(
-        undefined,
-        deps.files.includes('index.ts') ? './index.js' : undefined,
-      ),
-    ),
+    config.buildMode.type === 'Single'
+      ? ExportsService.of(undefined, tsToJs(config.buildMode.entrypoint))(undefined)
+      : pipe(
+          deps.files,
+          RA.foldMap(RecordMonoid)(file =>
+            RR.singleton(exportKey(file), {
+              ...(config.iife
+                ? { import: tsToJs(file), default: tsToGlobal(file) }
+                : {
+                    default: tsToJs(file),
+                  }),
+            }),
+          ),
+          ExportsService.of(
+            undefined,
+            config.buildMode.indexExport === undefined
+              ? undefined
+              : tsToJs(config.buildMode.indexExport),
+          ),
+        ),
   ),
 )
 
@@ -196,22 +238,26 @@ const EsmCommonExports: RTE.ReaderTaskEither<
 > = pipe(
   Common,
   RTE.map(({ config, deps }) =>
-    pipe(
-      deps.files,
-      RA.foldMap(RecordMonoid)(file =>
-        RR.singleton(exportKey(file), {
-          ...(config.iife
-            ? { import: tsToMjs(file), default: tsToGlobal(file) }
-            : {
-                default: tsToMjs(file),
-              }),
-        }),
-      ),
-      ExportsService.of(
-        undefined,
-        deps.files.includes('index.ts') ? './index.mjs' : undefined,
-      ),
-    ),
+    config.buildMode.type === 'Single'
+      ? ExportsService.of(undefined, tsToMjs(config.buildMode.entrypoint))(undefined)
+      : pipe(
+          deps.files,
+          RA.foldMap(RecordMonoid)(file =>
+            RR.singleton(exportKey(file), {
+              ...(config.iife
+                ? { import: tsToMjs(file), default: tsToGlobal(file) }
+                : {
+                    default: tsToMjs(file),
+                  }),
+            }),
+          ),
+          ExportsService.of(
+            undefined,
+            config.buildMode.indexExport === undefined
+              ? undefined
+              : tsToMjs(config.buildMode.indexExport),
+          ),
+        ),
   ),
 )
 

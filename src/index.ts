@@ -8,6 +8,7 @@ import * as Config from './ConfigService'
 import * as File from './FileService'
 import * as Log from './LoggingService'
 import * as Src from './SourceService'
+import * as Types from './TypesService'
 
 const consoleLoggingService = Log.ColorConsoleLoggingServiceLive
 const fileService = File.FileServiceLive
@@ -24,11 +25,15 @@ export const makeConfig: (
   overrideOptions =>
     pipe(
       TE.of(Config.ConfigServiceLive(config)),
-      TE.flatMap(configService =>
+      TE.map(configService => ({
+        ...configService,
+        ...Types.TypesServiceLive(configService),
+      })),
+      TE.flatMap(services =>
         Build.BuildServiceLive({
-          ...Config.ConfigServiceLive(config),
+          ...services,
           ...Src.SourceServiceLive({
-            ...configService,
+            ...services,
             ...fileService,
           }),
           ...consoleLoggingService,
