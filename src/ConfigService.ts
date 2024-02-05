@@ -12,7 +12,13 @@ interface SingleEntrypoint {
 
 interface MultiEntrypoint {
   readonly type: 'Multi'
-  readonly entrypointPattern: RegExp
+  /**
+   * Uses glob pattern to find entrypoints relative to CWD, see
+   * https://www.npmjs.com/package/glob,
+   *
+   * Note: you must include `./src` in the glob pattern
+   */
+  readonly entrypointGlobs: ReadonlyArray<string>
   readonly indexExport?: string
 }
 
@@ -36,14 +42,27 @@ export type ConfigParameters = {
   readonly buildMode?: BuildMode
 
   /**
-   * An option to emit declaration files using TypeScript's compiler.
+   * An option to emit declaration and declaration map files using TypeScript's compiler.
    *
    * This option will also add a `types` field to the emitted package.json
+   *
+   * Additionally, if `buildType` is set to `dual`, this option will emit both `.d.ts`
+   * files and either `.d.mts` or `.d.cts` files.
    */
   readonly emitTypes?: boolean
 
   /**
+   * A tsconfig used in `dts` generation
+   *
+   * Note: outdir, declaration, declarationMap, emitDeclarationOnly are ignored
+   */
+  readonly dtsConfig?: string
+
+  /**
    * Include IIFE generation for browser script tags (that don't support module scripts)
+   *
+   * This option is recommended for libraries with a single build-target, i.e. `buildType:
+   * 'cjs'` or `buildType: 'esm'`
    *
    * @default false
    */
@@ -99,11 +118,13 @@ export class ConfigService {
     srcDir = 'src',
     buildMode = { type: 'Single', entrypoint: 'index.ts' },
     emitTypes = true,
+    dtsConfig = 'tsconfig.json',
   }: ConfigParameters) {
     this[ConfigServiceSymbol] = {
       buildType,
       srcDir,
       omittedPackageKeys,
+      dtsConfig,
       copyFiles,
       basePath,
       outDir,

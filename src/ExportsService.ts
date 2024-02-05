@@ -1,8 +1,11 @@
+import { type Endomorphism } from 'fp-ts/lib/Endomorphism.js'
 import { pipe } from 'fp-ts/lib/function.js'
+import type * as Ord from 'fp-ts/lib/Ord.js'
 import * as RTE from 'fp-ts/lib/ReaderTaskEither.js'
 import * as RA from 'fp-ts/lib/ReadonlyArray.js'
 import * as RR from 'fp-ts/lib/ReadonlyRecord.js'
 import * as Sg from 'fp-ts/lib/Semigroup.js'
+import * as Str from 'fp-ts/lib/string.js'
 import * as TE from 'fp-ts/lib/TaskEither.js'
 import { type PackageJson } from 'type-fest'
 
@@ -17,19 +20,24 @@ export class ExportsService {
     exports: Exports | undefined,
     main: string | undefined,
     module: string | undefined,
+    types: string | undefined,
   ]
   constructor(
-    pkgExports?: Exports,
+    pkgExports: Exports,
     main?: string | undefined,
     module?: string | undefined,
+    types?: string | undefined,
   ) {
-    this[ExportsServiceSymbol] = [pkgExports, main, module]
+    this[ExportsServiceSymbol] = [pkgExports, main, module, types]
   }
   static of: (
     main?: string | undefined,
     module?: string | undefined,
-  ) => (pkgExports?: Exports) => ExportsService = (main, module) => pkgExports =>
-    new ExportsService(pkgExports, main, module)
+    types?: string | undefined,
+  ) => (pkgExports?: Exports) => ExportsService =
+    (main, module, types) =>
+    (pkgExports = { './package.json': './package.json' }) =>
+      new ExportsService(pkgExports, main, module, types)
 }
 
 export const pkgExports: RTE.ReaderTaskEither<
@@ -46,16 +54,33 @@ type ExportsServiceDeps = {
   readonly type: 'module' | 'commonjs'
 }
 
+const isCapitalized = (s: string): boolean => s !== '' && s[0] === s[0].toUpperCase()
+
 const RecordMonoid = RR.getMonoid(Sg.last<NonNullable<PackageJson['exports']>>())
+
+const FilesOrd: Ord.Ord<string> = {
+  equals: Str.Eq.equals,
+  compare: (x, y) =>
+    isCapitalized(x) && isCapitalized(y)
+      ? Str.Ord.compare(x, y)
+      : isCapitalized(x)
+        ? -1
+        : isCapitalized(y)
+          ? 1
+          : Str.Ord.compare(x, y),
+}
 
 const stripExtension = (file: string): string => file.replace(/\.[^/.]+$/, '')
 const tsToJs = (file: string): string => './' + file.replace(/\.tsx?$/, '.js')
 const tsToCjs = (file: string): string => './' + file.replace(/\.tsx?$/, '.cjs')
 const tsToGlobal = (file: string): string => './' + file.replace(/\.tsx?$/, '.global.js')
 const tsToMjs = (file: string): string => './' + file.replace(/\.tsx?$/, '.mjs')
+const tsToDts = (file: string): string => './' + file.replace(/\.tsx?$/, '.d.ts')
+const tsToDmts = (file: string): string => './' + file.replace(/\.tsx?$/, '.d.mts')
+const tsToDcts = (file: string): string => './' + file.replace(/\.tsx?$/, '.d.cts')
 
-const exportKey = (file: string): string =>
-  file === 'index.ts' ? '.' : `./${stripExtension(file)}`
+const exportKey = (indexFile: string, file: string): string =>
+  file === indexFile ? '.' : `./${stripExtension(file)}`
 
 const Common = pipe(
   RTE.Do,
@@ -63,203 +88,208 @@ const Common = pipe(
   RTE.apSW('deps', RTE.ask<ExportsServiceDeps>()),
 )
 
-const DualModuleExports: RTE.ReaderTaskEither<
-  ExportsServiceDeps & Config.ConfigService,
-  never,
-  ExportsService
-> = pipe(
-  Common,
-  RTE.map(({ config, deps }) =>
-    config.buildMode.type === 'Single'
-      ? ExportsService.of(
-          tsToCjs(config.buildMode.entrypoint),
-          tsToJs(config.buildMode.entrypoint),
-        )(undefined)
-      : pipe(
-          deps.files,
-          RA.foldMap(RecordMonoid)(file =>
-            RR.singleton(exportKey(file), {
-              ...(config.iife
-                ? {
-                    import: tsToJs(file),
-                    require: tsToCjs(file),
-                    default: tsToGlobal(file),
-                  }
-                : {
-                    import: tsToJs(file),
-                    default: tsToCjs(file),
-                  }),
-            }),
-          ),
-          ExportsService.of(
-            config.buildMode.indexExport === undefined
-              ? undefined
-              : tsToCjs(config.buildMode.indexExport),
-            config.buildMode.indexExport === undefined
-              ? undefined
-              : tsToJs(config.buildMode.indexExport),
-          ),
-        ),
-  ),
-)
+type TypesExports = {
+  readonly types?: string
+}
 
-const DualCommonExports: RTE.ReaderTaskEither<
-  ExportsServiceDeps & Config.ConfigService,
-  never,
-  ExportsService
-> = pipe(
-  Common,
-  RTE.map(({ config, deps }) =>
-    config.buildMode.type === 'Single'
-      ? ExportsService.of(
-          tsToJs(config.buildMode.entrypoint),
-          tsToMjs(config.buildMode.entrypoint),
-        )(undefined)
-      : pipe(
-          deps.files,
-          RA.foldMap(RecordMonoid)(file =>
-            RR.singleton(exportKey(file), {
-              ...(config.iife
-                ? {
-                    import: tsToMjs(file),
-                    require: tsToJs(file),
-                    default: tsToGlobal(file),
-                  }
-                : {
-                    import: tsToMjs(file),
-                    default: tsToJs(file),
-                  }),
-            }),
-          ),
-          ExportsService.of(
-            config.buildMode.indexExport === undefined
-              ? undefined
-              : tsToJs(config.buildMode.indexExport),
-            config.buildMode.indexExport === undefined
-              ? undefined
-              : tsToMjs(config.buildMode.indexExport),
-          ),
-        ),
-  ),
-)
+type DefaultExports = {
+  readonly default?: {
+    readonly default?: string
+  } & TypesExports
+}
 
-const CjsModuleExports: RTE.ReaderTaskEither<
-  ExportsServiceDeps & Config.ConfigService,
-  never,
-  ExportsService
-> = pipe(
-  Common,
-  RTE.map(({ config, deps }) =>
-    config.buildMode.type === 'Single'
-      ? ExportsService.of(tsToCjs(config.buildMode.entrypoint))(undefined)
-      : pipe(
-          deps.files,
-          RA.foldMap(RecordMonoid)(file =>
-            RR.singleton(exportKey(file), {
-              ...(config.iife
-                ? { require: tsToCjs(file), default: tsToGlobal(file) }
-                : {
-                    default: tsToCjs(file),
-                  }),
-            }),
-          ),
-          ExportsService.of(
-            config.buildMode.indexExport === undefined
-              ? undefined
-              : tsToCjs(config.buildMode.indexExport),
-          ),
-        ),
-  ),
-)
+const addDtsExports = (
+  config: Required<Config.ConfigParameters>,
+  file: string,
+): TypesExports => (config.emitTypes ? { types: tsToDts(file) } : {})
 
-const CjsCommonExports: RTE.ReaderTaskEither<
-  ExportsServiceDeps & Config.ConfigService,
-  never,
-  ExportsService
-> = pipe(
-  Common,
-  RTE.map(({ config, deps }) =>
-    config.buildMode.type === 'Single'
-      ? ExportsService.of(tsToJs(config.buildMode.entrypoint))(undefined)
-      : pipe(
-          deps.files,
-          RA.foldMap(RecordMonoid)(file =>
-            RR.singleton(exportKey(file), {
-              ...(config.iife
-                ? { require: tsToJs(file), default: tsToGlobal(file) }
-                : {
-                    default: tsToJs(file),
-                  }),
-            }),
-          ),
-          ExportsService.of(
-            config.buildMode.indexExport === undefined
-              ? undefined
-              : tsToJs(config.buildMode.indexExport),
-          ),
-        ),
-  ),
-)
+const addDmtsExports = (
+  config: Required<Config.ConfigParameters>,
+  file: string,
+): TypesExports => (config.emitTypes ? { types: tsToDmts(file) } : {})
 
-const EsmModuleExports: RTE.ReaderTaskEither<
-  ExportsServiceDeps & Config.ConfigService,
-  never,
-  ExportsService
-> = pipe(
-  Common,
-  RTE.map(({ config, deps }) =>
-    config.buildMode.type === 'Single'
-      ? ExportsService.of(undefined, tsToJs(config.buildMode.entrypoint))(undefined)
-      : pipe(
-          deps.files,
-          RA.foldMap(RecordMonoid)(file =>
-            RR.singleton(exportKey(file), {
-              ...(config.iife
-                ? { import: tsToJs(file), default: tsToGlobal(file) }
-                : {
-                    default: tsToJs(file),
-                  }),
-            }),
-          ),
-          ExportsService.of(
-            undefined,
-            config.buildMode.indexExport === undefined
-              ? undefined
-              : tsToJs(config.buildMode.indexExport),
-          ),
-        ),
-  ),
-)
+const addDctsExports = (
+  config: Required<Config.ConfigParameters>,
+  file: string,
+): TypesExports => (config.emitTypes ? { types: tsToDcts(file) } : {})
 
-const EsmCommonExports: RTE.ReaderTaskEither<
-  ExportsServiceDeps & Config.ConfigService,
+type ToExports = {
+  readonly types: (
+    config: Required<Config.ConfigParameters>,
+    file: string,
+  ) => TypesExports
+  readonly default: Endomorphism<string>
+}
+
+type ExportsConfig = {
+  readonly import?: ToExports
+  readonly require?: ToExports
+}
+
+const addGlobalExportSingle = (
+  config: Required<Config.ConfigParameters>,
+  singleBuildMode: Exclude<
+    Required<Config.ConfigParameters>['buildMode'],
+    { type: 'Multi' }
+  >,
+  { require: r }: ExportsConfig,
+): DefaultExports =>
+  config.iife
+    ? {
+        default: {
+          ...r?.types(config, singleBuildMode.entrypoint),
+          default: tsToGlobal(singleBuildMode.entrypoint),
+        },
+      }
+    : {}
+
+const addGlobalExportMulti = (
+  config: Required<Config.ConfigParameters>,
+  file: string,
+  { require: r }: ExportsConfig,
+): DefaultExports =>
+  config.iife
+    ? {
+        default: {
+          ...r?.types(config, file),
+          default: tsToGlobal(file),
+        },
+      }
+    : {}
+
+const toExportsService = (
+  exportsConfig: ExportsConfig,
+): RTE.ReaderTaskEither<
+  Config.ConfigService & ExportsServiceDeps,
   never,
   ExportsService
-> = pipe(
-  Common,
-  RTE.map(({ config, deps }) =>
-    config.buildMode.type === 'Single'
-      ? ExportsService.of(undefined, tsToMjs(config.buildMode.entrypoint))(undefined)
-      : pipe(
-          deps.files,
-          RA.foldMap(RecordMonoid)(file =>
-            RR.singleton(exportKey(file), {
-              ...(config.iife
-                ? { import: tsToMjs(file), default: tsToGlobal(file) }
+> =>
+  pipe(
+    Common,
+    RTE.map(({ config, deps }) => {
+      const { import: i, require: r } = exportsConfig
+      const buildType = config.buildMode.type
+      if (buildType === 'Single') {
+        return pipe(
+          {
+            '.': {
+              ...(i === undefined
+                ? {}
                 : {
-                    default: tsToMjs(file),
+                    import: {
+                      ...i.types(config, config.buildMode.entrypoint),
+                      default: i.default(config.buildMode.entrypoint),
+                    },
                   }),
-            }),
-          ),
+              ...(r === undefined
+                ? {}
+                : {
+                    require: {
+                      ...r.types(config, config.buildMode.entrypoint),
+                      default: r.default(config.buildMode.entrypoint),
+                    },
+                  }),
+              ...addGlobalExportSingle(config, config.buildMode, exportsConfig),
+            },
+            './package.json': './package.json',
+          },
           ExportsService.of(
-            undefined,
-            config.buildMode.indexExport === undefined
-              ? undefined
-              : tsToMjs(config.buildMode.indexExport),
+            r?.default(config.buildMode.entrypoint),
+            i?.default(config.buildMode.entrypoint),
+            (r ?? i)?.types(config, config.buildMode.entrypoint)['types'],
           ),
+        )
+      }
+      const indexFile = config.buildMode.indexExport ?? 'index.ts'
+      return pipe(
+        deps.files,
+        RA.sort(FilesOrd),
+        RA.foldMap(RecordMonoid)(file =>
+          RR.singleton(exportKey(indexFile, file), {
+            ...(i === undefined
+              ? {}
+              : {
+                  import: {
+                    ...i.types(config, file),
+                    default: i.default(file),
+                  },
+                }),
+            ...(r === undefined
+              ? {}
+              : {
+                  require: {
+                    ...r.types(config, file),
+                    default: r.default(file),
+                  },
+                }),
+            ...addGlobalExportMulti(config, file, exportsConfig),
+          }),
         ),
-  ),
-)
+        _ => ({ ..._, './package.json': './package.json' }),
+        ExportsService.of(
+          config.buildMode.indexExport
+            ? r?.default(config.buildMode.indexExport)
+            : undefined,
+          config.buildMode.indexExport
+            ? i?.default(config.buildMode.indexExport)
+            : undefined,
+          config.buildMode.indexExport
+            ? (r ?? i)?.types(config, config.buildMode.indexExport)['types']
+            : undefined,
+        ),
+      )
+    }),
+  )
+
+const DualTypeModuleExports = toExportsService({
+  import: {
+    types: addDtsExports,
+    default: tsToJs,
+  },
+  require: {
+    types: addDctsExports,
+    default: tsToCjs,
+  },
+})
+
+const DualTypeCommonExports = toExportsService({
+  import: {
+    types: addDmtsExports,
+    default: tsToMjs,
+  },
+  require: {
+    types: addDtsExports,
+    default: tsToJs,
+  },
+})
+
+const CjsTypeModuleExports = toExportsService({
+  require: {
+    types: addDctsExports,
+    default: tsToCjs,
+  },
+})
+
+const CjsTypeCommonExports = toExportsService({
+  require: {
+    types: addDtsExports,
+    default: tsToJs,
+  },
+})
+
+const EsmTypeModuleExports = toExportsService({
+  import: {
+    types: addDtsExports,
+    default: tsToJs,
+  },
+})
+
+const EsmTypeCommonExports = toExportsService({
+  import: {
+    types: addDmtsExports,
+    default: tsToMjs,
+  },
+})
 
 export const ExportsServiceLive: (
   deps: ExportsServiceDeps,
@@ -279,11 +309,17 @@ export const ExportsServiceLive: (
         TE.flatMap(({ config, type }) => {
           switch (config.buildType) {
             case 'dual':
-              return type === 'module' ? DualModuleExports(deps) : DualCommonExports(deps)
+              return type === 'module'
+                ? DualTypeModuleExports(deps)
+                : DualTypeCommonExports(deps)
             case 'cjs':
-              return type === 'module' ? CjsModuleExports(deps) : CjsCommonExports(deps)
+              return type === 'module'
+                ? CjsTypeModuleExports(deps)
+                : CjsTypeCommonExports(deps)
             default:
-              return type === 'module' ? EsmModuleExports(deps) : EsmCommonExports(deps)
+              return type === 'module'
+                ? EsmTypeModuleExports(deps)
+                : EsmTypeCommonExports(deps)
           }
         }),
       ),

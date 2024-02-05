@@ -12,7 +12,7 @@ function assertRight(e: E.Either<unknown, unknown>): asserts e is E.Right<unknow
 describe('ExportsService', () => {
   test.each([
     tuple(
-      'Dual Module Single Exports',
+      'Dual "type: module" Single Exports',
       ConfigServiceLive({
         buildMode: { type: 'Single', entrypoint: 'foo.ts' },
       }),
@@ -20,42 +20,55 @@ describe('ExportsService', () => {
         files: ['foo.ts', 'bar.ts'],
         type: 'module',
       }),
-      tuple(undefined, './foo.cjs', './foo.js'),
-    ),
-    tuple(
-      'Dual Module Multi Exports',
-      ConfigServiceLive({
-        buildMode: {
-          type: 'Multi',
-          entrypointPattern: /foo\.(.*\.)ts/,
-          indexExport: 'foo.ts',
-        },
-      }),
-      ExportsService.ExportsServiceLive({
-        files: ['foo.ts', 'foo.a.ts', 'foo.b.ts'],
-        type: 'module',
-      }),
       tuple(
         {
-          './foo': {
-            import: './foo.js',
-            default: './foo.cjs',
+          '.': {
+            import: { types: './foo.d.ts', default: './foo.js' },
+            require: { types: './foo.d.cts', default: './foo.cjs' },
           },
-          './foo.a': {
-            import: './foo.a.js',
-            default: './foo.a.cjs',
-          },
-          './foo.b': {
-            import: './foo.b.js',
-            default: './foo.b.cjs',
-          },
+          './package.json': './package.json',
         },
         './foo.cjs',
         './foo.js',
+        './foo.d.cts',
       ),
     ),
     tuple(
-      'Dual Common Single Exports',
+      'Dual "type: module" Multi Exports',
+      ConfigServiceLive({
+        buildMode: {
+          type: 'Multi',
+          entrypointGlobs: ['./src/foo.*.ts'],
+          indexExport: 'foo.ts',
+        },
+      }),
+      ExportsService.ExportsServiceLive({
+        files: ['foo.ts', 'foo.a.ts', 'foo.b.ts'],
+        type: 'module',
+      }),
+      tuple(
+        {
+          '.': {
+            import: { types: './foo.d.ts', default: './foo.js' },
+            require: { types: './foo.d.cts', default: './foo.cjs' },
+          },
+          './foo.a': {
+            import: { types: './foo.a.d.ts', default: './foo.a.js' },
+            require: { types: './foo.a.d.cts', default: './foo.a.cjs' },
+          },
+          './foo.b': {
+            import: { types: './foo.b.d.ts', default: './foo.b.js' },
+            require: { types: './foo.b.d.cts', default: './foo.b.cjs' },
+          },
+          './package.json': './package.json',
+        },
+        './foo.cjs',
+        './foo.js',
+        './foo.d.cts',
+      ),
+    ),
+    tuple(
+      'Dual "type: common" Single Exports',
       ConfigServiceLive({
         buildMode: { type: 'Single', entrypoint: 'foo.ts' },
       }),
@@ -63,42 +76,55 @@ describe('ExportsService', () => {
         files: ['foo.ts', 'bar.ts'],
         type: 'commonjs',
       }),
-      tuple(undefined, './foo.js', './foo.mjs'),
-    ),
-    tuple(
-      'Dual Common Multi Exports',
-      ConfigServiceLive({
-        buildMode: {
-          type: 'Multi',
-          entrypointPattern: /foo\.(.*\.)ts/,
-          indexExport: 'foo.ts',
-        },
-      }),
-      ExportsService.ExportsServiceLive({
-        files: ['foo.ts', 'foo.a.ts', 'foo.b.ts'],
-        type: 'commonjs',
-      }),
       tuple(
         {
-          './foo': {
-            import: './foo.mjs',
-            default: './foo.js',
+          '.': {
+            import: { types: './foo.d.mts', default: './foo.mjs' },
+            require: { types: './foo.d.ts', default: './foo.js' },
           },
-          './foo.a': {
-            import: './foo.a.mjs',
-            default: './foo.a.js',
-          },
-          './foo.b': {
-            import: './foo.b.mjs',
-            default: './foo.b.js',
-          },
+          './package.json': './package.json',
         },
         './foo.js',
         './foo.mjs',
+        './foo.d.ts',
       ),
     ),
     tuple(
-      'CJS Module Single Exports',
+      'Dual "type: common" Multi Exports',
+      ConfigServiceLive({
+        buildMode: {
+          type: 'Multi',
+          entrypointGlobs: ['./src/foo.*.ts'],
+          indexExport: 'foo.ts',
+        },
+      }),
+      ExportsService.ExportsServiceLive({
+        files: ['foo.ts', 'foo.a.ts', 'foo.b.ts'],
+        type: 'commonjs',
+      }),
+      tuple(
+        {
+          '.': {
+            import: { types: './foo.d.mts', default: './foo.mjs' },
+            require: { types: './foo.d.ts', default: './foo.js' },
+          },
+          './foo.a': {
+            import: { types: './foo.a.d.mts', default: './foo.a.mjs' },
+            require: { types: './foo.a.d.ts', default: './foo.a.js' },
+          },
+          './foo.b': {
+            import: { types: './foo.b.d.mts', default: './foo.b.mjs' },
+            require: { types: './foo.b.d.ts', default: './foo.b.js' },
+          },
+          './package.json': './package.json',
+        },
+        './foo.js',
+        './foo.mjs',
+        './foo.d.ts',
+      ),
+    ),
+    tuple(
+      'CJS "type: module" Single Exports',
       ConfigServiceLive({
         buildMode: { type: 'Single', entrypoint: 'foo.ts' },
         buildType: 'cjs',
@@ -107,40 +133,52 @@ describe('ExportsService', () => {
         files: ['foo.ts', 'bar.ts'],
         type: 'module',
       }),
-      tuple(undefined, './foo.cjs', undefined),
-    ),
-    tuple(
-      'CJS Module Multi Exports',
-      ConfigServiceLive({
-        buildMode: {
-          type: 'Multi',
-          entrypointPattern: /foo\.(.*\.)ts/,
-          indexExport: 'foo.ts',
-        },
-        buildType: 'cjs',
-      }),
-      ExportsService.ExportsServiceLive({
-        files: ['foo.ts', 'foo.a.ts', 'foo.b.ts'],
-        type: 'module',
-      }),
       tuple(
         {
-          './foo': {
-            default: './foo.cjs',
+          '.': {
+            require: { types: './foo.d.cts', default: './foo.cjs' },
           },
-          './foo.a': {
-            default: './foo.a.cjs',
-          },
-          './foo.b': {
-            default: './foo.b.cjs',
-          },
+          './package.json': './package.json',
         },
         './foo.cjs',
         undefined,
+        './foo.d.cts',
       ),
     ),
     tuple(
-      'CJS Common Single Exports',
+      'CJS "type: module" Multi Exports',
+      ConfigServiceLive({
+        buildMode: {
+          type: 'Multi',
+          entrypointGlobs: ['./src/foo.*.ts'],
+          indexExport: 'foo.ts',
+        },
+        buildType: 'cjs',
+      }),
+      ExportsService.ExportsServiceLive({
+        files: ['foo.ts', 'foo.a.ts', 'foo.b.ts'],
+        type: 'module',
+      }),
+      tuple(
+        {
+          '.': {
+            require: { types: './foo.d.cts', default: './foo.cjs' },
+          },
+          './foo.a': {
+            require: { types: './foo.a.d.cts', default: './foo.a.cjs' },
+          },
+          './foo.b': {
+            require: { types: './foo.b.d.cts', default: './foo.b.cjs' },
+          },
+          './package.json': './package.json',
+        },
+        './foo.cjs',
+        undefined,
+        './foo.d.cts',
+      ),
+    ),
+    tuple(
+      'CJS "type: common" Single Exports',
       ConfigServiceLive({
         buildMode: { type: 'Single', entrypoint: 'foo.ts' },
         buildType: 'cjs',
@@ -149,40 +187,52 @@ describe('ExportsService', () => {
         files: ['foo.ts', 'bar.ts'],
         type: 'commonjs',
       }),
-      tuple(undefined, './foo.js', undefined),
-    ),
-    tuple(
-      'CJS Common Multi Exports',
-      ConfigServiceLive({
-        buildMode: {
-          type: 'Multi',
-          entrypointPattern: /foo\.(.*\.)ts/,
-          indexExport: 'foo.ts',
-        },
-        buildType: 'cjs',
-      }),
-      ExportsService.ExportsServiceLive({
-        files: ['foo.ts', 'foo.a.ts', 'foo.b.ts'],
-        type: 'commonjs',
-      }),
       tuple(
         {
-          './foo': {
-            default: './foo.js',
+          '.': {
+            require: { types: './foo.d.ts', default: './foo.js' },
           },
-          './foo.a': {
-            default: './foo.a.js',
-          },
-          './foo.b': {
-            default: './foo.b.js',
-          },
+          './package.json': './package.json',
         },
         './foo.js',
         undefined,
+        './foo.d.ts',
       ),
     ),
     tuple(
-      'ESM Common Single Exports',
+      'CJS "type: common" Multi Exports',
+      ConfigServiceLive({
+        buildMode: {
+          type: 'Multi',
+          entrypointGlobs: ['./src/foo.*.ts'],
+          indexExport: 'foo.ts',
+        },
+        buildType: 'cjs',
+      }),
+      ExportsService.ExportsServiceLive({
+        files: ['foo.ts', 'foo.a.ts', 'foo.b.ts'],
+        type: 'commonjs',
+      }),
+      tuple(
+        {
+          '.': {
+            require: { types: './foo.d.ts', default: './foo.js' },
+          },
+          './foo.a': {
+            require: { types: './foo.a.d.ts', default: './foo.a.js' },
+          },
+          './foo.b': {
+            require: { types: './foo.b.d.ts', default: './foo.b.js' },
+          },
+          './package.json': './package.json',
+        },
+        './foo.js',
+        undefined,
+        './foo.d.ts',
+      ),
+    ),
+    tuple(
+      'ESM "type: common" Single Exports',
       ConfigServiceLive({
         buildMode: { type: 'Single', entrypoint: 'foo.ts' },
         buildType: 'esm',
@@ -191,40 +241,52 @@ describe('ExportsService', () => {
         files: ['foo.ts', 'bar.ts'],
         type: 'commonjs',
       }),
-      tuple(undefined, undefined, './foo.mjs'),
-    ),
-    tuple(
-      'ESM Common Multi Exports',
-      ConfigServiceLive({
-        buildMode: {
-          type: 'Multi',
-          entrypointPattern: /foo\.(.*\.)ts/,
-          indexExport: 'foo.ts',
-        },
-        buildType: 'esm',
-      }),
-      ExportsService.ExportsServiceLive({
-        files: ['foo.ts', 'foo.a.ts', 'foo.b.ts'],
-        type: 'commonjs',
-      }),
       tuple(
         {
-          './foo': {
-            default: './foo.mjs',
+          '.': {
+            import: { types: './foo.d.mts', default: './foo.mjs' },
           },
-          './foo.a': {
-            default: './foo.a.mjs',
-          },
-          './foo.b': {
-            default: './foo.b.mjs',
-          },
+          './package.json': './package.json',
         },
         undefined,
         './foo.mjs',
+        './foo.d.mts',
       ),
     ),
     tuple(
-      'ESM Module Single Exports',
+      'ESM "type: common" Multi Exports',
+      ConfigServiceLive({
+        buildMode: {
+          type: 'Multi',
+          entrypointGlobs: ['./src/foo.*.ts'],
+          indexExport: 'foo.ts',
+        },
+        buildType: 'esm',
+      }),
+      ExportsService.ExportsServiceLive({
+        files: ['foo.ts', 'foo.a.ts', 'foo.b.ts'],
+        type: 'commonjs',
+      }),
+      tuple(
+        {
+          '.': {
+            import: { types: './foo.d.mts', default: './foo.mjs' },
+          },
+          './foo.a': {
+            import: { types: './foo.a.d.mts', default: './foo.a.mjs' },
+          },
+          './foo.b': {
+            import: { types: './foo.b.d.mts', default: './foo.b.mjs' },
+          },
+          './package.json': './package.json',
+        },
+        undefined,
+        './foo.mjs',
+        './foo.d.mts',
+      ),
+    ),
+    tuple(
+      'ESM "type: module" Single Exports',
       ConfigServiceLive({
         buildMode: { type: 'Single', entrypoint: 'foo.ts' },
         buildType: 'esm',
@@ -233,14 +295,24 @@ describe('ExportsService', () => {
         files: ['foo.ts', 'bar.ts'],
         type: 'module',
       }),
-      tuple(undefined, undefined, './foo.js'),
+      tuple(
+        {
+          '.': {
+            import: { types: './foo.d.ts', default: './foo.js' },
+          },
+          './package.json': './package.json',
+        },
+        undefined,
+        './foo.js',
+        './foo.d.ts',
+      ),
     ),
     tuple(
-      'ESM Module Multi Exports',
+      'ESM "type: module" Multi Exports',
       ConfigServiceLive({
         buildMode: {
           type: 'Multi',
-          entrypointPattern: /foo\.(.*\.)ts/,
+          entrypointGlobs: ['./src/foo.*.ts'],
           indexExport: 'foo.ts',
         },
         buildType: 'esm',
@@ -251,18 +323,20 @@ describe('ExportsService', () => {
       }),
       tuple(
         {
-          './foo': {
-            default: './foo.js',
+          '.': {
+            import: { types: './foo.d.ts', default: './foo.js' },
           },
           './foo.a': {
-            default: './foo.a.js',
+            import: { types: './foo.a.d.ts', default: './foo.a.js' },
           },
           './foo.b': {
-            default: './foo.b.js',
+            import: { types: './foo.b.d.ts', default: './foo.b.js' },
           },
+          './package.json': './package.json',
         },
         undefined,
         './foo.js',
+        './foo.d.ts',
       ),
     ),
   ])('%s', async (_, configService, service, expected) => {
