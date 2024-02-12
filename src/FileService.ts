@@ -2,6 +2,7 @@ import { flow, pipe } from 'fp-ts/lib/function.js'
 import * as RTE from 'fp-ts/lib/ReaderTaskEither.js'
 import * as TE from 'fp-ts/lib/TaskEither.js'
 import fs from 'fs'
+import * as g from 'glob'
 
 const FileServiceSymbol = Symbol('FileService')
 
@@ -29,6 +30,10 @@ type FileServiceMethods = {
     destinationPath: string,
     options?: fs.CopyOptions,
   ) => TE.TaskEither<FileServiceError, void>
+  readonly glob: (
+    patterns: string | ReadonlyArray<string>,
+    options?: g.GlobOptionsWithFileTypesUnset,
+  ) => TE.TaskEither<FileServiceError, ReadonlyArray<string>>
 }
 
 export class FileService {
@@ -91,9 +96,18 @@ const copyDirectory_: (
   TE.asUnit,
 )
 
+export const glob_: (
+  patterns: string | ReadonlyArray<string>,
+  options?: g.GlobOptionsWithFileTypesUnset,
+) => TE.TaskEither<FileServiceError, ReadonlyArray<string>> = TE.tryCatchK(
+  g.glob as any,
+  err => FileServiceError.of(new Error(String(err))),
+)
+
 export const FileServiceLive: FileService = new FileService({
   readDirectory: readDirectory_,
   getFile: getFile_,
+  glob: glob_,
   writeFile: (path, content, options = 'utf8') => writeFile_(path, content, options),
   copyDirectory: (t, d, o = {}) => copyDirectory_(t, d, o),
 })
@@ -108,6 +122,18 @@ export const readDirectory: (
   pipe(
     RTE.ask<FileService>(),
     RTE.flatMapTaskEither(service => service[FileServiceSymbol].readDirectory(path)),
+  )
+
+export const glob: (
+  patterns: string | ReadonlyArray<string>,
+  options?: g.GlobOptionsWithFileTypesUnset,
+) => RTE.ReaderTaskEither<FileService, FileServiceError, ReadonlyArray<string>> = (
+  pattern,
+  options,
+) =>
+  pipe(
+    RTE.ask<FileService>(),
+    RTE.flatMapTaskEither(service => service[FileServiceSymbol].glob(pattern, options)),
   )
 
 export const getFile: (

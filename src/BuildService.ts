@@ -19,6 +19,7 @@ import * as Files from './FileService'
 import * as Log from './LoggingService'
 import * as Pkg from './PackageJson'
 import * as Src from './SourceService'
+import * as Types from './TypesService'
 
 const BuildServiceSymbol = Symbol('BuildService')
 
@@ -34,113 +35,120 @@ export class BuildService {
 }
 
 export const BuildServiceLive: RTE.ReaderTaskEither<
-  Log.LoggingService & Files.FileService & ConfigService & Src.SourceService,
-  Files.FileServiceError | Pkg.PackageJsonReadError,
+  ConfigService &
+    Log.LoggingService &
+    Files.FileService &
+    Src.SourceService &
+    Types.TypesService,
+  Files.FileServiceError | Pkg.PackageJsonReadError | Types.TypesServiceError,
   BuildService
 > = pipe(
   RTE.Do,
   RTE.apSW('config', config),
-  RTE.flatMap(({ config }) =>
+  RTE.bindW('entrypoints', ({ config }) =>
+    config.buildMode.type === 'Single'
+      ? RTE.right(
+          RA.of(path.join(config.basePath, config.srcDir, config.buildMode.entrypoint)),
+        )
+      : Files.glob(config.buildMode.entrypointGlobs),
+  ),
+  RTE.let('files', ({ entrypoints }) =>
     pipe(
-      RTE.Do,
-      RTE.let('config', () => config),
-      RTE.bindW('dirints', ({ config }) =>
-        Files.readDirectory(path.join(config.basePath, config.srcDir)),
+      entrypoints,
+      RA.map(p => path.basename(p)),
+    ),
+  ),
+  RTE.bindW('pkg', ({ config }) =>
+    pipe(
+      Files.getFile(path.join(config.basePath, 'package.json')),
+      RTE.flatMapTaskEither(Pkg.TranscoderPar.decode),
+      RTE.mapLeft(err =>
+        err instanceof TCE.TranscodeErrors ? new Pkg.PackageJsonReadError(err) : err,
       ),
-      RTE.let('files', ({ dirints }) => config.getEntrypoints(dirints)),
-      RTE.let('entrypoints', ({ files }) =>
-        pipe(
-          files,
-          RA.map(entrypoint => path.join(config.basePath, config.srcDir, entrypoint)),
-        ),
-      ),
-      RTE.apS(
-        'pkg',
-        pipe(
-          Files.getFile(path.join(config.basePath, 'package.json')),
-          RTE.flatMapTaskEither(Pkg.TranscoderPar.decode),
-          RTE.mapLeft(err =>
-            err instanceof TCE.TranscodeErrors ? new Pkg.PackageJsonReadError(err) : err,
-          ),
-        ),
-      ),
-      RTE.bindW(
-        'packageJson',
-        ({
-          files,
-          pkg: {
+    ),
+  ),
+  RTE.bindW(
+    'packageJson',
+    ({
+      files,
+      config,
+      pkg: {
+        name,
+        version,
+        description,
+        author,
+        license,
+        type,
+        main: _,
+        module: __,
+        exports: ___,
+        ...rest
+      },
+    }) =>
+      pipe(
+        RTE.ask<ConfigService>(),
+        RTE.flatMapTaskEither(Exports.ExportsServiceLive({ files, type })),
+        RTE.flatMapTaskEither(Exports.pkgExports),
+        RTE.map(
+          ([exports, main, module, types]): RR.ReadonlyRecord<string, unknown> => ({
             name,
             version,
             description,
             author,
             license,
             type,
-            main: _,
-            module: __,
-            exports: ___,
-            ...rest
-          },
-        }) =>
-          pipe(
-            RTE.ask<ConfigService>(),
-            RTE.flatMapTaskEither(Exports.ExportsServiceLive({ files, type })),
-            RTE.flatMapTaskEither(Exports.pkgExports),
-            RTE.map(
-              ([exports, main, module]): RR.ReadonlyRecord<string, unknown> => ({
-                name,
-                version,
-                description,
-                author,
-                license,
-                type,
-                main,
-                module,
-                exports,
-                ...pipe(
-                  rest,
-                  RR.filterWithIndex(key => !config.omittedPackageKeys.includes(key)),
-                ),
-              }),
+            main,
+            module,
+            exports,
+            types,
+            ...pipe(
+              rest,
+              RR.filterWithIndex(key => !config.omittedPackageKeys.includes(key)),
             ),
-            RTE.flatMapEither(occludedPackage =>
-              E.tryCatch(
-                () => JSON.stringify(occludedPackage, null, 2),
-                err =>
-                  TC.transcodeErrors(
-                    TC.serializationError('Package JSON', err, occludedPackage),
-                  ),
+          }),
+        ),
+        RTE.flatMapEither(occludedPackage =>
+          E.tryCatch(
+            () => JSON.stringify(occludedPackage, null, 2),
+            err =>
+              TC.transcodeErrors(
+                TC.serializationError('Package JSON', err, occludedPackage),
               ),
-            ),
-            RTE.mapLeft(err =>
-              err instanceof TCE.TranscodeErrors
-                ? new Pkg.PackageJsonReadError(err)
-                : err,
-            ),
           ),
-      ),
-      RTE.apSW(
-        'extraFiles',
-        pipe(
-          config.copyFiles,
-          RTE.traverseArray(file =>
-            pipe(
-              Files.getFile(path.join(config.basePath, file)),
-              RTE.map(fileContents => tuple(file, fileContents)),
-            ),
-          ),
-          RTE.map(RR.fromEntries),
+        ),
+        RTE.mapLeft(err =>
+          err instanceof TCE.TranscodeErrors ? new Pkg.PackageJsonReadError(err) : err,
         ),
       ),
+  ),
+  RTE.bindW('extraFiles', ({ config }) =>
+    pipe(
+      config.copyFiles,
+      RTE.traverseArray(file =>
+        pipe(
+          Files.getFile(path.join(config.basePath, file)),
+          RTE.map(fileContents => tuple(file, fileContents)),
+        ),
+      ),
+      RTE.map(RR.fromEntries),
     ),
   ),
-  RTE.bindW('onSuccess', ({ config, packageJson, extraFiles }) =>
+  RTE.bindW('onSuccess', ({ config, packageJson, pkg, extraFiles }) =>
     pipe(
       RTE.Do,
+      RTE.apSW('configService', RTE.ask<ConfigService>()),
       RTE.apSW('fileService', RTE.ask<Files.FileService>()),
       RTE.apSW('loggingService', RTE.ask<Log.LoggingService>()),
       RTE.apSW('srcService', RTE.ask<Src.SourceService>()),
+      RTE.apSW('typesService', RTE.ask<Types.TypesService>()),
       RTE.map(
-        ({ fileService, loggingService, srcService }): T.Task<void> =>
+        ({
+          fileService,
+          loggingService,
+          srcService,
+          typesService,
+          configService,
+        }): T.Task<void> =>
           pipe(
             RTE.Do,
             RTE.tapReaderTask(() =>
@@ -198,6 +206,31 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
             RTE.tapReaderTask(() =>
               Log.info(color.magenta('PCK') + color.whiteBright(' Copied source files')),
             ),
+            RTE.tap(() =>
+              config.emitTypes
+                ? pipe(
+                    RTE.Do,
+                    RTE.tapReaderTask(() =>
+                      Log.info(
+                        color.blueBright('DTS') +
+                          color.whiteBright(' Emitting declaration files'),
+                      ),
+                    ),
+                    RTE.flatMap(() => Types.emitTypes(pkg)),
+                    RTE.flatMap(
+                      RTE.traverseArray(
+                        RTE.fromReaderTaskK(([ext, file]) =>
+                          Log.info(
+                            color.greenBright(
+                              ext === '.d.mts' ? 'MTS' : ext === '.d.cts' ? 'CTS' : 'DTS',
+                            ) + color.whiteBright(` Emitted ${ext} for ${file}`),
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                : RTE.right(void 0),
+            ),
             RTE.tap(() => Src.rewriteSourceMaps),
             RTE.tapReaderTask(() =>
               Log.info(
@@ -207,7 +240,7 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
             RTE.matchEW(
               err =>
                 pipe(
-                  Log.error(err),
+                  Log.error('Failed to build', err),
                   RT.tapIO(() => () => {
                     process.exit(1)
                   }),
@@ -215,19 +248,20 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
               () =>
                 Log.info(color.magenta('PCK') + color.whiteBright(' ⚡️ Pack Success')),
             ),
-            rt => rt({ ...loggingService, ...fileService, ...srcService }),
+            rt =>
+              rt({
+                ...loggingService,
+                ...fileService,
+                ...srcService,
+                ...typesService,
+                ...configService,
+              }),
           ),
       ),
     ),
   ),
   RTE.map(
-    ({
-      config,
-      config: { minify, dts, splitting, sourcemap, clean },
-      entrypoints,
-      onSuccess,
-      pkg,
-    }) =>
+    ({ config, entrypoints, onSuccess, pkg }) =>
       new BuildService({
         configuration: {
           entry: RA.toArray(entrypoints),
@@ -239,11 +273,6 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
             ...(config.iife ? ['iife' as const] : []),
           ] satisfies Options['format'],
           onSuccess,
-          minify,
-          dts,
-          splitting,
-          sourcemap,
-          clean,
           plugins: [
             esbuildPluginFilePathExtensions({
               cjsExtension: pkg.type === 'module' ? '.cjs' : '.js',

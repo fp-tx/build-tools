@@ -1,13 +1,31 @@
-import { flow, pipe } from 'fp-ts/lib/function.js'
-import * as O from 'fp-ts/lib/Option.js'
+import { pipe } from 'fp-ts/lib/function.js'
 import type * as R from 'fp-ts/lib/Reader.js'
 import * as RTE from 'fp-ts/lib/ReaderTaskEither.js'
-import * as RA from 'fp-ts/lib/ReadonlyArray.js'
-import type fs from 'fs'
-import { type Options } from 'tsup'
 import { type PackageJson } from 'type-fest'
 
 const ConfigServiceSymbol = Symbol('ConfigService')
+
+interface SingleEntrypoint {
+  readonly type: 'Single'
+  readonly entrypoint: string
+}
+
+interface MultiEntrypoint {
+  readonly type: 'Multi'
+  /**
+   * Uses glob pattern to find entrypoints relative to CWD, see
+   * https://www.npmjs.com/package/glob,
+   *
+   * Note: you must include `./src` in the glob pattern
+   *
+   * Also note: deep file entrypoints are not currently supported. Each entrypoint this
+   * glob resolves to must be a file within `src` or else exports will not resolve.
+   */
+  readonly entrypointGlobs: ReadonlyArray<string>
+  readonly indexExport?: string
+}
+
+export type BuildMode = SingleEntrypoint | MultiEntrypoint
 
 export type ConfigParameters = {
   /**
@@ -18,18 +36,40 @@ export type ConfigParameters = {
   readonly buildType?: 'cjs' | 'esm' | 'dual'
 
   /**
+   * Determines if the package is single or multi entrypoint
+   *
+   * Note: entrypoint is relative to `basePath` <> `srcDir`
+   *
+   * @default `{ type: 'Single', entrypoint: 'index.ts' }`
+   */
+  readonly buildMode?: BuildMode
+
+  /**
+   * An option to emit declaration and declaration map files using TypeScript's compiler.
+   *
+   * This option will also add a `types` field to the emitted package.json
+   *
+   * Additionally, if `buildType` is set to `dual`, this option will emit both `.d.ts`
+   * files and either `.d.mts` or `.d.cts` files.
+   */
+  readonly emitTypes?: boolean
+
+  /**
+   * A tsconfig used in `dts` generation
+   *
+   * Note: outdir, declaration, declarationMap, emitDeclarationOnly are ignored
+   */
+  readonly dtsConfig?: string
+
+  /**
    * Include IIFE generation for browser script tags (that don't support module scripts)
+   *
+   * This option is recommended for libraries with a single build-target, i.e. `buildType:
+   * 'cjs'` or `buildType: 'esm'`
    *
    * @default false
    */
   readonly iife?: boolean
-
-  /**
-   * The source directory to read from
-   *
-   * @default 'src'
-   */
-  readonly srcDir?: string
 
   /**
    * The current working directory
@@ -39,29 +79,11 @@ export type ConfigParameters = {
   readonly basePath?: string
 
   /**
-   * A function which maps resolved entrypoints in "src" to their respective output paths.
+   * Sets the source directory, path is relative to "basePath"
    *
-   * Appends result of `getEntrypoints` to `basePath <> srcDir` to get the full path to
-   * the entrypoint.
-   *
-   * @example
-   *   // default behavior
-   *   RA.filterMap(
-   *     flow(
-   *       O.fromPredicate(dirInt => dirInt.isFile()),
-   *       O.map(dirInt => dirInt.name),
-   *       O.filter(name => name.endsWith('.ts') || name.endsWith('.tsx')),
-   *       O.filter(name => !name.endsWith('.d.ts')),
-   *       O.filter(
-   *         name =>
-   *           !name.includes('spec') &&
-   *           !name.includes('test') &&
-   *           !name.includes('internal'),
-   *       ),
-   *     ),
-   *   )
+   * @default 'src'
    */
-  readonly getEntrypoints?: (srcDir: ReadonlyArray<fs.Dirent>) => ReadonlyArray<string>
+  readonly srcDir?: string
 
   /**
    * A list of package.json keys to omit from the copied file in dist
@@ -85,106 +107,33 @@ export type ConfigParameters = {
    * @default 'dist'
    */
   readonly outDir?: string
-
-  /**
-   * If the output should be minified
-   *
-   * @default false
-   */
-  readonly minify?: Options['minify']
-
-  /**
-   * If the output should have split chunks
-   *
-   * @default false
-   */
-  readonly splitting?: Options['splitting']
-
-  /**
-   * Whether to emit sourcemaps
-   *
-   * @default true
-   */
-  readonly sourcemap?: Options['sourcemap']
-
-  /**
-   * Whether to emit declaration files
-   *
-   * @default true
-   */
-  readonly dts?: Options['dts']
-
-  /**
-   * Whether to emit experimental declaration files
-   *
-   * @default false
-   */
-  readonly experimentalDts?: Options['experimentalDts']
-
-  /**
-   * Whether to cleanup dist before building
-   *
-   * @default true
-   */
-  readonly clean?: Options['clean']
-
-  /**
-   * Target platform
-   *
-   * @default 'neutral'
-   */
-  readonly platform?: Options['platform']
 }
-
-const defaultGetEntrypoints: NonNullable<ConfigParameters['getEntrypoints']> =
-  RA.filterMap(
-    flow(
-      O.fromPredicate(dirInt => dirInt.isFile()),
-      O.map(dirInt => dirInt.name),
-      O.filter(name => name.endsWith('.ts') || name.endsWith('.tsx')),
-      O.filter(name => !name.endsWith('.d.ts')),
-      O.filter(
-        name =>
-          !name.includes('spec') && !name.includes('test') && !name.includes('internal'),
-      ),
-    ),
-  )
 
 export class ConfigService {
   [ConfigServiceSymbol]: Required<ConfigParameters>
   constructor({
     buildType = 'dual',
-    srcDir = 'src',
     omittedPackageKeys = ['devDependencies', 'scripts', 'lint-staged'],
     copyFiles = ['README.md', 'LICENSE'],
     basePath = '.',
     outDir = 'dist',
-    splitting = false,
-    minify = false,
-    dts = true,
-    sourcemap = true,
     iife = false,
-    clean: cleanup = true,
-    platform = 'neutral',
-    experimentalDts = false,
-    getEntrypoints = defaultGetEntrypoints,
+    srcDir = 'src',
+    buildMode = { type: 'Single', entrypoint: 'index.ts' },
+    emitTypes = true,
+    dtsConfig = 'tsconfig.json',
   }: ConfigParameters) {
     this[ConfigServiceSymbol] = {
       buildType,
       srcDir,
       omittedPackageKeys,
+      dtsConfig,
       copyFiles,
       basePath,
       outDir,
-      splitting,
-      minify,
-      dts,
-      platform,
-      sourcemap,
       iife,
-      experimentalDts,
-      getEntrypoints,
-      clean: cleanup,
+      buildMode,
+      emitTypes,
     }
   }
 }
