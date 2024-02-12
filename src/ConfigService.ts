@@ -17,6 +17,9 @@ interface MultiEntrypoint {
    * https://www.npmjs.com/package/glob,
    *
    * Note: you must include `./src` in the glob pattern
+   *
+   * Also note: deep file entrypoints are not currently supported. Each entrypoint this
+   * glob resolves to must be a file within `src` or else exports will not resolve.
    */
   readonly entrypointGlobs: ReadonlyArray<string>
   readonly indexExport?: string
