@@ -17,8 +17,8 @@ dependencies:
     specifier: ^10.3.10
     version: 10.3.10
   schemata-ts:
-    specifier: ^2.2.2
-    version: 2.2.2(fast-check@3.15.1)
+    specifier: ^2.2.3
+    version: 2.2.3(fast-check@3.15.1)
   ts-morph:
     specifier: ^21.0.1
     version: 21.0.1
@@ -5112,8 +5112,8 @@ packages:
       is-regex: 1.1.4
     dev: true
 
-  /schemata-ts@2.2.2(fast-check@3.15.1):
-    resolution: {integrity: sha512-klnZub/aJ2MT3mSkrCibrWB9Sbt2MskqIGk1kpySnaTSoY4YEO9+GdMbXmU1ZP9X0K/7AUoWhATe36yMTj53Ig==}
+  /schemata-ts@2.2.3(fast-check@3.15.1):
+    resolution: {integrity: sha512-P4twbIJV+uL3yTURFNay76JZZQR+AS2DxsShmmFhi+g3R5WNstnIk7aVtdQu/FdIg4ysraAMB2nVzEaX+p+jyA==}
     peerDependencies:
       fast-check: ^3.1.4
     dependencies:

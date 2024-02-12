@@ -2,6 +2,8 @@ import * as S from 'schemata-ts'
 import type * as TCE from 'schemata-ts/TranscodeError'
 import { deriveTranscoderPar } from 'schemata-ts/TranscoderPar'
 
+export * from 'schemata-ts/schemables/parser/definition'
+
 export const PackageJsonSchema = S.ParseJsonString(
   S.Struct(
     {
