@@ -61,19 +61,18 @@ export class TypesService {
   }
 }
 
-type NodeMapper = (node: ts.Node, context: ts.TransformationContext) => ts.Node
-
 const mapSourceFile =
-  (mapNode: NodeMapper) =>
+  (mapNode: Endomorphism<ts.Node>) =>
   (context: ts.TransformationContext) =>
   (sourceFile: ts.SourceFile | ts.Bundle): ts.SourceFile => {
     const mapNodeAndChildren = (node: ts.Node): ts.Node => {
-      return ts.visitEachChild(mapNode(node, context), mapNodeAndChildren, context)
+      return ts.visitEachChild(mapNode(node), mapNodeAndChildren, context)
     }
     return mapNodeAndChildren(sourceFile) as ts.SourceFile
   }
 
-const isRelativePath = (path: string): boolean => /^\.\.?\//.test(path)
+// See: https://github.com/microsoft/TypeScript/blob/a6414052a3eb66e30670f20c6597ee4b74067c73/src/compiler/path.ts#L101C12-L101C41
+const isRelativePath = (path: string): boolean => /^\.\.?($|[\\/])/.test(path)
 
 export const mapFileAndExtension: Endomorphism<Endomorphism<string>> =
   remapExtenion => importPath => {
@@ -83,9 +82,33 @@ export const mapFileAndExtension: Endomorphism<Endomorphism<string>> =
     return rewrittenPath.startsWith('.') ? rewrittenPath : `./${rewrittenPath}`
   }
 
-const rewriteRelativeImportSpecifier: (
+export const rewriteRelativeImportSpecifier: (
   remapExtension: Endomorphism<string>,
-) => NodeMapper = remapExtension => node => {
+) => Endomorphism<ts.Node> = remapExtension => node => {
+  // --- Import Declaration ----
+  // --------- from ------------
+  // import { foo } from './foo'
+  // ---------- to -------------
+  // import { foo } from './foo.(m|c)js'
+  // ---------------------------
+  // -- Import Namespace Decl --
+  // --------- from ------------
+  // import * as foo from './foo'
+  // ---------- to -------------
+  // import * as foo './foo.(m|c)js'
+  // ---------------------------
+  // ----- Default Import ------
+  // --------- from ------------
+  // import Foo from './foo'
+  // ---------- to -------------
+  // import Foo from './foo.(m|c)js'
+  // ---------------------------
+  // --- Import Declaration ----
+  // --------- from ------------
+  // import './foo'
+  // ---------- to -------------
+  // import './foo.(m|c)js'
+  // ---------------------------
   if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
     const importPath = node.moduleSpecifier.text
 
@@ -102,6 +125,93 @@ const rewriteRelativeImportSpecifier: (
       )
     }
   }
+
+  // --- Import Type Node ------
+  // --------- from ------------
+  // import("./foo")
+  // ---------- to -------------
+  // import("./foo.(m|c)js")
+  // ---------------------------
+  if (
+    ts.isImportTypeNode(node) &&
+    ts.isLiteralTypeNode(node.argument) &&
+    ts.isStringLiteral(node.argument.literal)
+  ) {
+    const importPath = node.argument.literal.text
+    if (isRelativePath(importPath)) {
+      const rewrittenPath = mapFileAndExtension(remapExtension)(importPath)
+      return ts.factory.updateImportTypeNode(
+        node,
+        ts.factory.createLiteralTypeNode(
+          ts.factory.createStringLiteral(
+            rewrittenPath.startsWith('.') ? rewrittenPath : `./${rewrittenPath}`,
+          ),
+        ),
+        node.attributes,
+        node.qualifier,
+        node.typeArguments,
+        node.isTypeOf,
+      )
+    }
+  }
+
+  // --- Module Declaration ----
+  // --------- from ------------
+  // declare module './foo'
+  // ---------- to -------------
+  // declare module './foo.(m|c)js'
+  // ---------------------------
+  if (ts.isModuleDeclaration(node)) {
+    const name = node.name.text
+    const rewrittenPath = mapFileAndExtension(remapExtension)(name)
+    return ts.factory.updateModuleDeclaration(
+      node,
+      node.modifiers,
+      ts.factory.createStringLiteral(
+        rewrittenPath.startsWith('.') ? rewrittenPath : `./${rewrittenPath}`,
+      ),
+      node.body,
+    )
+  }
+  // ----- Named exports -------
+  // --------- from ------------
+  // export { foo } from './foo'
+  // ---------- to -------------
+  // export { foo } from './foo.(m|c)js
+  // ---------------------------
+  // --- Export Declarations ---
+  // --------- from ------------
+  // export * from './foo'
+  // ---------- to -------------
+  // export * from './foo.(m|c)js'
+  // ---------------------------
+  // ---- Export Namespace -----
+  // --------- from ------------
+  // export * as foo from './foo'
+  // ---------- to -------------
+  // export * as foo from './foo.(m|c)js'
+  // ---------------------------
+  if (
+    ts.isExportDeclaration(node) &&
+    node.moduleSpecifier &&
+    ts.isStringLiteral(node.moduleSpecifier)
+  ) {
+    const importPath = node.moduleSpecifier.text
+    if (isRelativePath(importPath)) {
+      const rewrittenPath = mapFileAndExtension(remapExtension)(importPath)
+      return ts.factory.updateExportDeclaration(
+        node,
+        node.modifiers,
+        node.isTypeOnly,
+        node.exportClause,
+        ts.factory.createStringLiteral(
+          rewrittenPath.startsWith('.') ? rewrittenPath : `./${rewrittenPath}`,
+        ),
+        node.attributes,
+      )
+    }
+  }
+
   return node
 }
 
