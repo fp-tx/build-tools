@@ -35,7 +35,10 @@ describe('relative import remapping', () => {
             undefined,
             undefined,
           )
-          const transformed = Types.rewriteRelativeImportSpecifier(rewrite)(testNode)
+          const transformed = Types.rewriteRelativeImportSpecifier(
+            rewrite,
+            (importPath, _sourceFile) => importPath,
+          )(testNode)
           const result = printNode(transformed)
           expect(result).toBe(`import("../index.${ext}")`)
         })
@@ -46,7 +49,10 @@ describe('relative import remapping', () => {
             undefined,
             undefined,
           )
-          const transformed = Types.rewriteRelativeImportSpecifier(rewrite)(testNode)
+          const transformed = Types.rewriteRelativeImportSpecifier(
+            rewrite,
+            (importPath, _sourceFile) => importPath,
+          )(testNode)
           const result = printNode(transformed)
           expect(result).toBe(`import("../index.${ext}")`)
         })
@@ -59,7 +65,10 @@ describe('relative import remapping', () => {
             undefined,
             undefined,
           )
-          const transformed = Types.rewriteRelativeImportSpecifier(rewrite)(testNode)
+          const transformed = Types.rewriteRelativeImportSpecifier(
+            rewrite,
+            (importPath, _sourceFile) => importPath,
+          )(testNode)
           const result = printNode(transformed)
           expect(result).toBe(`import("../../../../index.${ext}")`)
         })
@@ -70,7 +79,10 @@ describe('relative import remapping', () => {
             undefined,
             undefined,
           )
-          const transformed = Types.rewriteRelativeImportSpecifier(rewrite)(testNode)
+          const transformed = Types.rewriteRelativeImportSpecifier(
+            rewrite,
+            (importPath, _sourceFile) => importPath,
+          )(testNode)
           const result = printNode(transformed)
           expect(result).toBe(`import("./index.${ext}")`)
         })
@@ -91,7 +103,10 @@ describe('relative import remapping', () => {
           ),
           ts.factory.createStringLiteral('./foo'),
         )
-        const transformed = Types.rewriteRelativeImportSpecifier(rewrite)(testNode)
+        const transformed = Types.rewriteRelativeImportSpecifier(
+          rewrite,
+          (importPath, _sourceFile) => importPath,
+        )(testNode)
         const result = printNode(transformed)
         expect(result).toBe(`import { type foo } from "./foo.${ext}";`)
       })
@@ -105,7 +120,10 @@ describe('relative import remapping', () => {
           ),
           ts.factory.createStringLiteral('./foo'),
         )
-        const transformed = Types.rewriteRelativeImportSpecifier(rewrite)(testNode)
+        const transformed = Types.rewriteRelativeImportSpecifier(
+          rewrite,
+          (importPath, _sourceFile) => importPath,
+        )(testNode)
         const result = printNode(transformed)
         expect(result).toBe(`import * as foo from "./foo.${ext}";`)
       })
@@ -119,7 +137,10 @@ describe('relative import remapping', () => {
           ),
           ts.factory.createStringLiteral('./foo'),
         )
-        const transformed = Types.rewriteRelativeImportSpecifier(rewrite)(testNode)
+        const transformed = Types.rewriteRelativeImportSpecifier(
+          rewrite,
+          (importPath, _sourceFile) => importPath,
+        )(testNode)
         const result = printNode(transformed)
         expect(result).toBe(`import foo from "./foo.${ext}";`)
       })
@@ -129,7 +150,10 @@ describe('relative import remapping', () => {
           undefined,
           ts.factory.createStringLiteral('./foo'),
         )
-        const transformed = Types.rewriteRelativeImportSpecifier(rewrite)(testNode)
+        const transformed = Types.rewriteRelativeImportSpecifier(
+          rewrite,
+          importPath => importPath,
+        )(testNode)
         const result = printNode(transformed)
         expect(result).toBe(`import "./foo.${ext}";`)
       })
@@ -140,7 +164,10 @@ describe('relative import remapping', () => {
           undefined,
           undefined,
         )
-        const transformed = Types.rewriteRelativeImportSpecifier(rewrite)(testNode)
+        const transformed = Types.rewriteRelativeImportSpecifier(
+          rewrite,
+          (importPath, _sourceFile) => importPath,
+        )(testNode)
         const result = printNode(transformed)
         expect(result).toBe(`import("./foo.${ext}")`)
       })
@@ -150,7 +177,10 @@ describe('relative import remapping', () => {
           ts.factory.createIdentifier('./foo'),
           ts.factory.createModuleBlock([]),
         )
-        const transformed = Types.rewriteRelativeImportSpecifier(rewrite)(testNode)
+        const transformed = Types.rewriteRelativeImportSpecifier(
+          rewrite,
+          (importPath, _sourceFile) => importPath,
+        )(testNode)
         const result = printNode(transformed)
         expect(result).toBe(`declare module "./foo.${ext}" { }`)
       })
@@ -161,7 +191,10 @@ describe('relative import remapping', () => {
           undefined,
           ts.factory.createStringLiteral('./foo'),
         )
-        const transformed = Types.rewriteRelativeImportSpecifier(rewrite)(testNode)
+        const transformed = Types.rewriteRelativeImportSpecifier(
+          rewrite,
+          (importPath, _sourceFile) => importPath,
+        )(testNode)
         const result = printNode(transformed)
         expect(result).toBe(`export type * from "./foo.${ext}";`)
       })
@@ -172,7 +205,10 @@ describe('relative import remapping', () => {
           ts.factory.createNamespaceExport(ts.factory.createIdentifier('foo')),
           ts.factory.createStringLiteral('./foo'),
         )
-        const transformed = Types.rewriteRelativeImportSpecifier(rewrite)(testNode)
+        const transformed = Types.rewriteRelativeImportSpecifier(
+          rewrite,
+          (importPath, _sourceFile) => importPath,
+        )(testNode)
         const result = printNode(transformed)
         expect(result).toBe(`export * as foo from "./foo.${ext}";`)
       })
@@ -185,7 +221,10 @@ describe('relative import remapping', () => {
           ]),
           ts.factory.createStringLiteral('./foo'),
         )
-        const transformed = Types.rewriteRelativeImportSpecifier(rewrite)(testNode)
+        const transformed = Types.rewriteRelativeImportSpecifier(
+          rewrite,
+          (importPath, _sourceFile) => importPath,
+        )(testNode)
         const result = printNode(transformed)
         expect(result).toBe(`export { type foo as foo2 } from "./foo.${ext}";`)
       })
