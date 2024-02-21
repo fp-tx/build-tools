@@ -74,11 +74,17 @@ const mapSourceFile =
 // See: https://github.com/microsoft/TypeScript/blob/a6414052a3eb66e30670f20c6597ee4b74067c73/src/compiler/path.ts#L101C12-L101C41
 const isRelativePath = (path: string): boolean => /^\.\.?($|[\\/])/.test(path)
 
+const isImplicitIndexPath = (basename: string): boolean =>
+  basename === '..' || basename === '.'
+
 export const mapFileAndExtension: Endomorphism<Endomorphism<string>> =
   remapExtenion => importPath => {
-    const fileNameWithExtension = path.basename(importPath)
+    const basename = path.basename(importPath)
+    const indexNormalized = isImplicitIndexPath(basename)
+      ? path.join(basename, 'index')
+      : basename
     const dirname = path.dirname(importPath)
-    const rewrittenPath = path.join(dirname, remapExtenion(fileNameWithExtension))
+    const rewrittenPath = path.join(dirname, remapExtenion(indexNormalized))
     return rewrittenPath.startsWith('.') ? rewrittenPath : `./${rewrittenPath}`
   }
 
