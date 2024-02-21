@@ -27,6 +27,54 @@ describe('relative import remapping', () => {
       )
     })
     describe('node remapping', () => {
+      describe('implicit index paths', () => {
+        test('immediate parent index', () => {
+          const testNode = ts.factory.createImportTypeNode(
+            ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral('..')),
+            undefined,
+            undefined,
+            undefined,
+          )
+          const transformed = Types.rewriteRelativeImportSpecifier(rewrite)(testNode)
+          const result = printNode(transformed)
+          expect(result).toBe(`import("../index.${ext}")`)
+        })
+        test('immediate parent index with slash', () => {
+          const testNode = ts.factory.createImportTypeNode(
+            ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral('../')),
+            undefined,
+            undefined,
+            undefined,
+          )
+          const transformed = Types.rewriteRelativeImportSpecifier(rewrite)(testNode)
+          const result = printNode(transformed)
+          expect(result).toBe(`import("../index.${ext}")`)
+        })
+        test('deep parent index', () => {
+          const testNode = ts.factory.createImportTypeNode(
+            ts.factory.createLiteralTypeNode(
+              ts.factory.createStringLiteral('../../../../'),
+            ),
+            undefined,
+            undefined,
+            undefined,
+          )
+          const transformed = Types.rewriteRelativeImportSpecifier(rewrite)(testNode)
+          const result = printNode(transformed)
+          expect(result).toBe(`import("../../../../index.${ext}")`)
+        })
+        test('same folder index', () => {
+          const testNode = ts.factory.createImportTypeNode(
+            ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral('.')),
+            undefined,
+            undefined,
+            undefined,
+          )
+          const transformed = Types.rewriteRelativeImportSpecifier(rewrite)(testNode)
+          const result = printNode(transformed)
+          expect(result).toBe(`import("./index.${ext}")`)
+        })
+      })
       it('rewrites named import declarations', () => {
         const testNode = ts.factory.createImportDeclaration(
           undefined,
