@@ -63,8 +63,9 @@
     "type-fest": "^4.10.0"
   },
   "scripts": {
-    "test": "jest",
-    "test:ci": "pnpm run test --ci",
+    "test": "jest --testPathIgnorePatterns=e2e",
+    "test-e2e": "pnpm run build && jest --testPathPattern=e2e",
+    "test:ci": "pnpm run test --ci && pnpm run test-e2e --ci",
     "postinstall": "husky install",
     "build": "tsup",
     "build:check": "attw --pack ./dist",
