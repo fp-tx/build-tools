@@ -1,6 +1,7 @@
 import { RealFileSystemHost } from '@ts-morph/common'
 import { type Endomorphism } from 'fp-ts/lib/Endomorphism.js'
 import { flow, pipe, tuple } from 'fp-ts/lib/function.js'
+import * as O from 'fp-ts/lib/Option.js'
 import * as R from 'fp-ts/lib/Reader.js'
 import * as RTE from 'fp-ts/lib/ReaderTaskEither.js'
 import * as RA from 'fp-ts/lib/ReadonlyArray.js'
@@ -88,9 +89,25 @@ export const mapFileAndExtension: Endomorphism<Endomorphism<string>> =
     return rewrittenPath.startsWith('.') ? rewrittenPath : `./${rewrittenPath}`
   }
 
+const getSourceFile = (node: ts.Node): O.Option<string> =>
+  pipe(
+    node.getSourceFile(),
+    O.fromNullable,
+    O.orElse(() =>
+      O.fromNullable(
+        // This isn't made explicit in the types, but Typescript will add an
+        // `original` property to nodes when they get `update`d, and their
+        // `getSourceFile()` returns undefined. This is a workaround for that.
+        (node as ts.Node & { original?: ts.Node }).original?.getSourceFile(),
+      ),
+    ),
+    O.map(_ => _.fileName),
+  )
+
 export const rewriteRelativeImportSpecifier: (
   remapExtension: Endomorphism<string>,
-) => Endomorphism<ts.Node> = remapExtension => node => {
+  getModuleReference: (importPath: string, sourceFile: O.Option<string>) => string,
+) => Endomorphism<ts.Node> = (remapExtension, getModuleReference) => node => {
   // --- Import Declaration ----
   // --------- from ------------
   // import { foo } from './foo'
@@ -119,7 +136,9 @@ export const rewriteRelativeImportSpecifier: (
     const importPath = node.moduleSpecifier.text
 
     if (isRelativePath(importPath)) {
-      const rewrittenPath = mapFileAndExtension(remapExtension)(importPath)
+      const rewrittenPath = mapFileAndExtension(remapExtension)(
+        getModuleReference(importPath, getSourceFile(node)),
+      )
       return ts.factory.updateImportDeclaration(
         node,
         node.modifiers,
@@ -145,7 +164,9 @@ export const rewriteRelativeImportSpecifier: (
   ) {
     const importPath = node.argument.literal.text
     if (isRelativePath(importPath)) {
-      const rewrittenPath = mapFileAndExtension(remapExtension)(importPath)
+      const rewrittenPath = mapFileAndExtension(remapExtension)(
+        getModuleReference(importPath, getSourceFile(node)),
+      )
       return ts.factory.updateImportTypeNode(
         node,
         ts.factory.createLiteralTypeNode(
@@ -169,7 +190,9 @@ export const rewriteRelativeImportSpecifier: (
   // ---------------------------
   if (ts.isModuleDeclaration(node)) {
     const name = node.name.text
-    const rewrittenPath = mapFileAndExtension(remapExtension)(name)
+    const rewrittenPath = mapFileAndExtension(remapExtension)(
+      getModuleReference(name, getSourceFile(node)),
+    )
     return ts.factory.updateModuleDeclaration(
       node,
       node.modifiers,
@@ -204,7 +227,9 @@ export const rewriteRelativeImportSpecifier: (
   ) {
     const importPath = node.moduleSpecifier.text
     if (isRelativePath(importPath)) {
-      const rewrittenPath = mapFileAndExtension(remapExtension)(importPath)
+      const rewrittenPath = mapFileAndExtension(remapExtension)(
+        getModuleReference(importPath, getSourceFile(node)),
+      )
       return ts.factory.updateExportDeclaration(
         node,
         node.modifiers,
@@ -266,6 +291,28 @@ const emitDtsCommon = (
         async ({ config, project }) => {
           const compilerOptions = project.getCompilerOptions()
           const diagnosticsHost = ts.createCompilerHost(compilerOptions, true)
+          const getModuleReference = (
+            importPath: string,
+            sourceFilename: O.Option<string>,
+          ): string =>
+            pipe(
+              O.Do,
+              O.apS('sourceFilename', sourceFilename),
+              O.bind('resolvedFilename', ({ sourceFilename }) =>
+                O.fromNullable(
+                  ts.resolveModuleName(
+                    importPath,
+                    sourceFilename,
+                    compilerOptions,
+                    ts.sys,
+                  ).resolvedModule?.resolvedFileName,
+                ),
+              ),
+              O.map(({ sourceFilename, resolvedFilename }) =>
+                path.relative(path.dirname(sourceFilename), resolvedFilename),
+              ),
+              O.getOrElse(() => importPath),
+            )
           const sourceFiles = project
             .addSourceFilesAtPaths(
               config.buildMode.type === 'Single'
@@ -286,7 +333,12 @@ const emitDtsCommon = (
             emitOnlyDtsFiles: true,
             customTransformers: {
               afterDeclarations: [
-                mapSourceFile(rewriteRelativeImportSpecifier(rewriteImportSpecifier)),
+                mapSourceFile(
+                  rewriteRelativeImportSpecifier(
+                    rewriteImportSpecifier,
+                    getModuleReference,
+                  ),
+                ),
               ],
             },
           })
