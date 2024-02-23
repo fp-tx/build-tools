@@ -25,8 +25,7 @@ jobs:
         with:
           version: 8
           run_install: |
-            - recursive: true
-              args: [--frozen-lockfile, --strict-peer-dependencies]
+            - args: [--frozen-lockfile, --strict-peer-dependencies]
 
       - name: Bump Package Version
         id: bumping-version
