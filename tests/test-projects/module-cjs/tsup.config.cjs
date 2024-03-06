@@ -1,9 +1,9 @@
-import { makeConfig } from '@fp-tx/build-tools'
+const { makeConfig } = require('@fp-tx/build-tools')
 
-export default makeConfig(
+module.exports = makeConfig(
   {
     basePath: '.',
-    buildType: 'dual',
+    buildType: 'cjs',
     buildMode: {
       type: 'Single',
       entrypoint: 'foo.ts',
@@ -11,6 +11,7 @@ export default makeConfig(
     srcDir: './src',
     outDir: './dist',
     copyFiles: [],
+    iife: true,
   },
   {
     clean: true,

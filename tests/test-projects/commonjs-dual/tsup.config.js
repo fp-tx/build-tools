@@ -11,6 +11,7 @@ export default makeConfig(
     srcDir: './src',
     outDir: './dist',
     copyFiles: [],
+    iife: true,
   },
   {
     clean: true,

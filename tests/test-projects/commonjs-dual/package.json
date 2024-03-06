@@ -1,0 +1,7 @@
+{
+  "name": "commonjs-dual",
+  "version": "0.0.1",
+  "devDependencies": {
+    "@fp-tx/build-tools": "file:../../../dist"
+  }
+}
