@@ -370,6 +370,8 @@ export const rewriteOrAddMjs: Endomorphism<string> = fileName => {
       return `${fileName}.mjs`
     case '.js':
       return fileName.replace(/\.js$/, '.mjs')
+    case '.ts':
+      return fileName.replace(/\.ts$/, '.mjs')
     default:
       return fileName
   }
@@ -382,6 +384,8 @@ export const rewriteOrAddCjs: Endomorphism<string> = fileName => {
       return `${fileName}.cjs`
     case '.js':
       return fileName.replace(/\.js$/, '.cjs')
+    case '.ts':
+      return fileName.replace(/\.ts$/, '.cjs')
     default:
       return fileName
   }
@@ -394,6 +398,8 @@ export const rewriteOrAddJs: Endomorphism<string> = fileName => {
       return `${fileName}.js`
     case '.js':
       return fileName
+    case '.ts':
+      return fileName.replace(/\.ts$/, '.js')
     default:
       return fileName
   }
@@ -463,6 +469,24 @@ export const emitDcts: RTE.ReaderTaskEither<
   RTE.flatMapTaskEither(service => service[TypesServiceSymbol].emitDcts),
 )
 
+const conditionallyEmitGlobalDts = (
+  iife: boolean,
+):
+  | undefined
+  | RR.ReadonlyRecord<
+      string,
+      RTE.ReaderTaskEither<TypesService, TypesServiceError, ReadonlyArray<string>>
+    > => (iife ? { '.d.ts': emitDts } : undefined)
+
+const conditionallyEmitGlobalCts = (
+  iife: boolean,
+):
+  | undefined
+  | RR.ReadonlyRecord<
+      string,
+      RTE.ReaderTaskEither<TypesService, TypesServiceError, ReadonlyArray<string>>
+    > => (iife ? { '.d.cts': emitDcts } : undefined)
+
 export const emitTypes = (
   packageJson: Pkg.PackageJson,
 ): RTE.ReaderTaskEither<
@@ -492,15 +516,20 @@ export const emitTypes = (
             case 'esm':
               switch (packageJson.type) {
                 case 'module':
-                  return { '.d.ts': emitDts }
+                  return { '.d.ts': emitDts, ...conditionallyEmitGlobalCts(config.iife) }
                 case 'commonjs':
-                  return { '.d.cts': emitDcts }
+                  return {
+                    '.d.mts': emitDmts,
+                    ...conditionallyEmitGlobalDts(config.iife),
+                  }
               }
             // eslint-disable-next-line no-fallthrough
             case 'cjs':
               switch (packageJson.type) {
                 case 'module':
-                  return { '.d.mts': emitDmts }
+                  return {
+                    '.d.cts': emitDcts,
+                  }
                 case 'commonjs':
                   return { '.d.ts': emitDts }
               }

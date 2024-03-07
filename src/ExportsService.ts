@@ -74,6 +74,8 @@ const stripExtension = (file: string): string => file.replace(/\.[^/.]+$/, '')
 const tsToJs = (file: string): string => './' + file.replace(/\.tsx?$/, '.js')
 const tsToCjs = (file: string): string => './' + file.replace(/\.tsx?$/, '.cjs')
 const tsToGlobal = (file: string): string => './' + file.replace(/\.tsx?$/, '.global.js')
+const tsToGlobalCjs = (file: string): string =>
+  './' + file.replace(/\.tsx?$/, '.global.cjs')
 const tsToMjs = (file: string): string => './' + file.replace(/\.tsx?$/, '.mjs')
 const tsToDts = (file: string): string => './' + file.replace(/\.tsx?$/, '.d.ts')
 const tsToDmts = (file: string): string => './' + file.replace(/\.tsx?$/, '.d.mts')
@@ -124,6 +126,7 @@ type ToExports = {
 type ExportsConfig = {
   readonly import?: ToExports
   readonly require?: ToExports
+  readonly default?: ToExports
 }
 
 const addGlobalExportSingle = (
@@ -132,13 +135,13 @@ const addGlobalExportSingle = (
     Required<Config.ConfigParameters>['buildMode'],
     { type: 'Multi' }
   >,
-  { require: r }: ExportsConfig,
+  { default: d }: ExportsConfig,
 ): DefaultExports =>
   config.iife
     ? {
         default: {
-          ...r?.types(config, singleBuildMode.entrypoint),
-          default: tsToGlobal(singleBuildMode.entrypoint),
+          ...d?.types(config, singleBuildMode.entrypoint),
+          default: d?.default(singleBuildMode.entrypoint),
         },
       }
     : {}
@@ -146,13 +149,13 @@ const addGlobalExportSingle = (
 const addGlobalExportMulti = (
   config: Required<Config.ConfigParameters>,
   file: string,
-  { require: r }: ExportsConfig,
+  { default: d }: ExportsConfig,
 ): DefaultExports =>
   config.iife
     ? {
         default: {
-          ...r?.types(config, file),
-          default: tsToGlobal(file),
+          ...d?.types(config, file),
+          default: d?.default(file),
         },
       }
     : {}
@@ -250,6 +253,10 @@ const DualTypeModuleExports = toExportsService({
     types: addDctsExports,
     default: tsToCjs,
   },
+  default: {
+    types: addDctsExports,
+    default: tsToGlobalCjs,
+  },
 })
 
 const DualTypeCommonExports = toExportsService({
@@ -261,12 +268,20 @@ const DualTypeCommonExports = toExportsService({
     types: addDtsExports,
     default: tsToJs,
   },
+  default: {
+    types: addDtsExports,
+    default: tsToGlobal,
+  },
 })
 
 const CjsTypeModuleExports = toExportsService({
   require: {
     types: addDctsExports,
     default: tsToCjs,
+  },
+  default: {
+    types: addDctsExports,
+    default: tsToGlobalCjs,
   },
 })
 
@@ -275,6 +290,10 @@ const CjsTypeCommonExports = toExportsService({
     types: addDtsExports,
     default: tsToJs,
   },
+  default: {
+    types: addDtsExports,
+    default: tsToGlobal,
+  },
 })
 
 const EsmTypeModuleExports = toExportsService({
@@ -282,12 +301,20 @@ const EsmTypeModuleExports = toExportsService({
     types: addDtsExports,
     default: tsToJs,
   },
+  default: {
+    types: addDctsExports,
+    default: tsToGlobalCjs,
+  },
 })
 
 const EsmTypeCommonExports = toExportsService({
   import: {
     types: addDmtsExports,
     default: tsToMjs,
+  },
+  default: {
+    types: addDtsExports,
+    default: tsToGlobal,
   },
 })
 

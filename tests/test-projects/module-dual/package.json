@@ -1,0 +1,8 @@
+{
+  "name": "module-dual",
+  "version": "0.0.1",
+  "type": "module",
+  "devDependencies": {
+    "@fp-tx/build-tools": "file:../../../dist"
+  }
+}

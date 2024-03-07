@@ -34,6 +34,38 @@ export class BuildService {
   }
 }
 
+// Adapted from https://github.com/egoist/tsup/blob/83c7c7f3131ca6d46aaad4de3111c2fd5e5b5c21/src/utils.ts#L140
+const outExtension: Options['outExtension'] = ({ format, pkgType }) => {
+  const isModule = pkgType === 'module'
+
+  if (isModule && format === 'cjs') {
+    return {
+      js: '.cjs',
+      dts: '.d.cts',
+    }
+  }
+  if (!isModule && format === 'esm') {
+    return {
+      js: '.mjs',
+      dts: '.d.mts',
+    }
+  }
+  if (isModule && format === 'iife') {
+    return {
+      js: '.global.cjs',
+    }
+  }
+  if (!isModule && format === 'iife') {
+    return {
+      js: '.global.js',
+    }
+  }
+  return {
+    js: '.js',
+    dts: '.d.ts',
+  }
+}
+
 export const BuildServiceLive: RTE.ReaderTaskEither<
   ConfigService &
     Log.LoggingService &
@@ -273,6 +305,7 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
             ...(config.iife ? ['iife' as const] : []),
           ] satisfies Options['format'],
           onSuccess,
+          outExtension,
           plugins: [
             esbuildPluginFilePathExtensions({
               cjsExtension: pkg.type === 'module' ? '.cjs' : '.js',

@@ -12,5 +12,6 @@ export default makeConfig(
   },
   {
     platform: 'node',
+    clean: true,
   },
 )
