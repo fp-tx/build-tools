@@ -58,7 +58,7 @@
     "esbuild-plugin-file-path-extensions": "^1.0.0",
     "fp-ts": "^2.16.1",
     "glob": "^10.3.10",
-    "schemata-ts": "^2.2.3",
+    "schemata-ts": "^2.2.4",
     "ts-morph": "^21.0.1",
     "type-fest": "^4.10.0"
   },
