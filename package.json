@@ -47,20 +47,20 @@
     "prettier-plugin-jsdoc": "^1.1.1",
     "tsc-files": "^1.1.4",
     "tsup": "^8.0.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.5.4"
   },
   "peerDependencies": {
     "tsup": "^8.0.0"
   },
   "dependencies": {
-    "@ts-morph/common": "^0.22.0",
+    "@ts-morph/common": "^0.24.0",
     "colorette": "^2.0.20",
     "esbuild-plugin-file-path-extensions": "^1.0.0",
     "fp-ts": "^2.16.1",
     "glob": "^10.3.10",
     "schemata-ts": "^2.2.4",
-    "ts-morph": "^21.0.1",
-    "type-fest": "^4.10.0"
+    "ts-morph": "^23.0.0",
+    "type-fest": "^4.24.0"
   },
   "scripts": {
     "test": "jest --testPathIgnorePatterns=e2e",
