@@ -261,6 +261,7 @@ const sharedConfig = (host: RealFileSystemHost) =>
               declaration: true,
               declarationMap: true,
               noEmit: false,
+              rootDir: config.basePath,
               outDir: path.join(config.basePath, config.outDir),
               moduleResolution: ts.ModuleResolutionKind.Node16,
               module: ts.ModuleKind.Node16,

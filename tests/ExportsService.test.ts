@@ -23,14 +23,14 @@ describe('ExportsService', () => {
       tuple(
         {
           '.': {
-            import: { types: './foo.d.ts', default: './foo.js' },
-            require: { types: './foo.d.cts', default: './foo.cjs' },
+            import: { types: './src/foo.d.ts', default: './foo.js' },
+            require: { types: './src/foo.d.cts', default: './foo.cjs' },
           },
           './package.json': './package.json',
         },
         './foo.cjs',
         './foo.js',
-        './foo.d.cts',
+        './src/foo.d.cts',
       ),
     ),
     tuple(
@@ -49,22 +49,22 @@ describe('ExportsService', () => {
       tuple(
         {
           '.': {
-            import: { types: './foo.d.ts', default: './foo.js' },
-            require: { types: './foo.d.cts', default: './foo.cjs' },
+            import: { types: './src/foo.d.ts', default: './foo.js' },
+            require: { types: './src/foo.d.cts', default: './foo.cjs' },
           },
           './foo.a': {
-            import: { types: './foo.a.d.ts', default: './foo.a.js' },
-            require: { types: './foo.a.d.cts', default: './foo.a.cjs' },
+            import: { types: './src/foo.a.d.ts', default: './foo.a.js' },
+            require: { types: './src/foo.a.d.cts', default: './foo.a.cjs' },
           },
           './foo.b': {
-            import: { types: './foo.b.d.ts', default: './foo.b.js' },
-            require: { types: './foo.b.d.cts', default: './foo.b.cjs' },
+            import: { types: './src/foo.b.d.ts', default: './foo.b.js' },
+            require: { types: './src/foo.b.d.cts', default: './foo.b.cjs' },
           },
           './package.json': './package.json',
         },
         './foo.cjs',
         './foo.js',
-        './foo.d.cts',
+        './src/foo.d.cts',
       ),
     ),
     tuple(
@@ -79,14 +79,14 @@ describe('ExportsService', () => {
       tuple(
         {
           '.': {
-            import: { types: './foo.d.mts', default: './foo.mjs' },
-            require: { types: './foo.d.ts', default: './foo.js' },
+            import: { types: './src/foo.d.mts', default: './foo.mjs' },
+            require: { types: './src/foo.d.ts', default: './foo.js' },
           },
           './package.json': './package.json',
         },
         './foo.js',
         './foo.mjs',
-        './foo.d.ts',
+        './src/foo.d.ts',
       ),
     ),
     tuple(
@@ -105,22 +105,22 @@ describe('ExportsService', () => {
       tuple(
         {
           '.': {
-            import: { types: './foo.d.mts', default: './foo.mjs' },
-            require: { types: './foo.d.ts', default: './foo.js' },
+            import: { types: './src/foo.d.mts', default: './foo.mjs' },
+            require: { types: './src/foo.d.ts', default: './foo.js' },
           },
           './foo.a': {
-            import: { types: './foo.a.d.mts', default: './foo.a.mjs' },
-            require: { types: './foo.a.d.ts', default: './foo.a.js' },
+            import: { types: './src/foo.a.d.mts', default: './foo.a.mjs' },
+            require: { types: './src/foo.a.d.ts', default: './foo.a.js' },
           },
           './foo.b': {
-            import: { types: './foo.b.d.mts', default: './foo.b.mjs' },
-            require: { types: './foo.b.d.ts', default: './foo.b.js' },
+            import: { types: './src/foo.b.d.mts', default: './foo.b.mjs' },
+            require: { types: './src/foo.b.d.ts', default: './foo.b.js' },
           },
           './package.json': './package.json',
         },
         './foo.js',
         './foo.mjs',
-        './foo.d.ts',
+        './src/foo.d.ts',
       ),
     ),
     tuple(
@@ -136,13 +136,13 @@ describe('ExportsService', () => {
       tuple(
         {
           '.': {
-            require: { types: './foo.d.cts', default: './foo.cjs' },
+            require: { types: './src/foo.d.cts', default: './foo.cjs' },
           },
           './package.json': './package.json',
         },
         './foo.cjs',
         undefined,
-        './foo.d.cts',
+        './src/foo.d.cts',
       ),
     ),
     tuple(
@@ -162,19 +162,19 @@ describe('ExportsService', () => {
       tuple(
         {
           '.': {
-            require: { types: './foo.d.cts', default: './foo.cjs' },
+            require: { types: './src/foo.d.cts', default: './foo.cjs' },
           },
           './foo.a': {
-            require: { types: './foo.a.d.cts', default: './foo.a.cjs' },
+            require: { types: './src/foo.a.d.cts', default: './foo.a.cjs' },
           },
           './foo.b': {
-            require: { types: './foo.b.d.cts', default: './foo.b.cjs' },
+            require: { types: './src/foo.b.d.cts', default: './foo.b.cjs' },
           },
           './package.json': './package.json',
         },
         './foo.cjs',
         undefined,
-        './foo.d.cts',
+        './src/foo.d.cts',
       ),
     ),
     tuple(
@@ -190,13 +190,13 @@ describe('ExportsService', () => {
       tuple(
         {
           '.': {
-            require: { types: './foo.d.ts', default: './foo.js' },
+            require: { types: './src/foo.d.ts', default: './foo.js' },
           },
           './package.json': './package.json',
         },
         './foo.js',
         undefined,
-        './foo.d.ts',
+        './src/foo.d.ts',
       ),
     ),
     tuple(
@@ -216,19 +216,19 @@ describe('ExportsService', () => {
       tuple(
         {
           '.': {
-            require: { types: './foo.d.ts', default: './foo.js' },
+            require: { types: './src/foo.d.ts', default: './foo.js' },
           },
           './foo.a': {
-            require: { types: './foo.a.d.ts', default: './foo.a.js' },
+            require: { types: './src/foo.a.d.ts', default: './foo.a.js' },
           },
           './foo.b': {
-            require: { types: './foo.b.d.ts', default: './foo.b.js' },
+            require: { types: './src/foo.b.d.ts', default: './foo.b.js' },
           },
           './package.json': './package.json',
         },
         './foo.js',
         undefined,
-        './foo.d.ts',
+        './src/foo.d.ts',
       ),
     ),
     tuple(
@@ -244,13 +244,13 @@ describe('ExportsService', () => {
       tuple(
         {
           '.': {
-            import: { types: './foo.d.mts', default: './foo.mjs' },
+            import: { types: './src/foo.d.mts', default: './foo.mjs' },
           },
           './package.json': './package.json',
         },
         undefined,
         './foo.mjs',
-        './foo.d.mts',
+        './src/foo.d.mts',
       ),
     ),
     tuple(
@@ -270,19 +270,19 @@ describe('ExportsService', () => {
       tuple(
         {
           '.': {
-            import: { types: './foo.d.mts', default: './foo.mjs' },
+            import: { types: './src/foo.d.mts', default: './foo.mjs' },
           },
           './foo.a': {
-            import: { types: './foo.a.d.mts', default: './foo.a.mjs' },
+            import: { types: './src/foo.a.d.mts', default: './foo.a.mjs' },
           },
           './foo.b': {
-            import: { types: './foo.b.d.mts', default: './foo.b.mjs' },
+            import: { types: './src/foo.b.d.mts', default: './foo.b.mjs' },
           },
           './package.json': './package.json',
         },
         undefined,
         './foo.mjs',
-        './foo.d.mts',
+        './src/foo.d.mts',
       ),
     ),
     tuple(
@@ -298,13 +298,13 @@ describe('ExportsService', () => {
       tuple(
         {
           '.': {
-            import: { types: './foo.d.ts', default: './foo.js' },
+            import: { types: './src/foo.d.ts', default: './foo.js' },
           },
           './package.json': './package.json',
         },
         undefined,
         './foo.js',
-        './foo.d.ts',
+        './src/foo.d.ts',
       ),
     ),
     tuple(
@@ -324,19 +324,19 @@ describe('ExportsService', () => {
       tuple(
         {
           '.': {
-            import: { types: './foo.d.ts', default: './foo.js' },
+            import: { types: './src/foo.d.ts', default: './foo.js' },
           },
           './foo.a': {
-            import: { types: './foo.a.d.ts', default: './foo.a.js' },
+            import: { types: './src/foo.a.d.ts', default: './foo.a.js' },
           },
           './foo.b': {
-            import: { types: './foo.b.d.ts', default: './foo.b.js' },
+            import: { types: './src/foo.b.d.ts', default: './foo.b.js' },
           },
           './package.json': './package.json',
         },
         undefined,
         './foo.js',
-        './foo.d.ts',
+        './src/foo.d.ts',
       ),
     ),
   ])('%s', async (_, configService, service, expected) => {
