@@ -7,6 +7,7 @@ import * as RR from 'fp-ts/lib/ReadonlyRecord.js'
 import * as Sg from 'fp-ts/lib/Semigroup.js'
 import * as Str from 'fp-ts/lib/string.js'
 import * as TE from 'fp-ts/lib/TaskEither.js'
+import path from 'path'
 import { type PackageJson } from 'type-fest'
 
 import * as Config from './ConfigService'
@@ -77,9 +78,12 @@ const tsToGlobal = (file: string): string => './' + file.replace(/\.tsx?$/, '.gl
 const tsToGlobalCjs = (file: string): string =>
   './' + file.replace(/\.tsx?$/, '.global.cjs')
 const tsToMjs = (file: string): string => './' + file.replace(/\.tsx?$/, '.mjs')
-const tsToDts = (file: string): string => './' + file.replace(/\.tsx?$/, '.d.ts')
-const tsToDmts = (file: string): string => './' + file.replace(/\.tsx?$/, '.d.mts')
-const tsToDcts = (file: string): string => './' + file.replace(/\.tsx?$/, '.d.cts')
+const tsToDts = (config: Required<Config.ConfigParameters>, file: string): string =>
+  './' + path.join(config.srcDir, file.replace(/\.tsx?$/, '.d.ts'))
+const tsToDmts = (config: Required<Config.ConfigParameters>, file: string): string =>
+  './' + path.join(config.srcDir, file.replace(/\.tsx?$/, '.d.mts'))
+const tsToDcts = (config: Required<Config.ConfigParameters>, file: string): string =>
+  './' + path.join(config.srcDir, file.replace(/\.tsx?$/, '.d.cts'))
 
 const exportKey = (indexFile: string, file: string): string =>
   file === indexFile ? '.' : `./${stripExtension(file)}`
@@ -103,17 +107,17 @@ type DefaultExports = {
 const addDtsExports = (
   config: Required<Config.ConfigParameters>,
   file: string,
-): TypesExports => (config.emitTypes ? { types: tsToDts(file) } : {})
+): TypesExports => (config.emitTypes ? { types: tsToDts(config, file) } : {})
 
 const addDmtsExports = (
   config: Required<Config.ConfigParameters>,
   file: string,
-): TypesExports => (config.emitTypes ? { types: tsToDmts(file) } : {})
+): TypesExports => (config.emitTypes ? { types: tsToDmts(config, file) } : {})
 
 const addDctsExports = (
   config: Required<Config.ConfigParameters>,
   file: string,
-): TypesExports => (config.emitTypes ? { types: tsToDcts(file) } : {})
+): TypesExports => (config.emitTypes ? { types: tsToDcts(config, file) } : {})
 
 type ToExports = {
   readonly types: (
