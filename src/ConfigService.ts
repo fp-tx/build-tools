@@ -2,6 +2,7 @@ import { pipe } from 'fp-ts/lib/function.js'
 import type * as R from 'fp-ts/lib/Reader.js'
 import * as RTE from 'fp-ts/lib/ReaderTaskEither.js'
 import { type PackageJson } from 'type-fest'
+import { type CompilerOptions } from 'typescript'
 
 const ConfigServiceSymbol = Symbol('ConfigService')
 
@@ -107,6 +108,18 @@ export type ConfigParameters = {
    * @default 'dist'
    */
   readonly outDir?: string
+
+  /**
+   * Options that override build-tools type options when compiling TypeScript declaration
+   * files.
+   *
+   * @remarks
+   *   **Do not use this option unless you are certain you know what you're doing.**
+   *   Build-tools chooses the best options for library development, and overriding these
+   *   could cause unpredictable behavior.
+   * @default { }
+   */
+  readonly dtsCompilerOverrides?: Partial<CompilerOptions>
 }
 
 export class ConfigService {
@@ -122,6 +135,7 @@ export class ConfigService {
     buildMode = { type: 'Single', entrypoint: 'index.ts' },
     emitTypes = true,
     dtsConfig = 'tsconfig.json',
+    dtsCompilerOverrides = {},
   }: ConfigParameters) {
     this[ConfigServiceSymbol] = {
       buildType,
@@ -134,6 +148,7 @@ export class ConfigService {
       iife,
       buildMode,
       emitTypes,
+      dtsCompilerOverrides,
     }
   }
 }
