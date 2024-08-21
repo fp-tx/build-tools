@@ -266,6 +266,8 @@ const sharedConfig = (host: RealFileSystemHost) =>
               moduleResolution: ts.ModuleResolutionKind.Node16,
               module: ts.ModuleKind.Node16,
               target: ts.ScriptTarget.ESNext,
+              stripInternal: true,
+              ...config.dtsCompilerOverrides,
             },
             fileSystem: host,
           }),
