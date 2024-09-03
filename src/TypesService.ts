@@ -295,7 +295,7 @@ const emitDtsCommon = (
     // Parse tsconfig
     RTE.bindW('compilerOptions', ({ config }) =>
       pipe(
-        getCompilerOptionsFromTsConfig(config.dtsConfig),
+        getCompilerOptionsFromTsConfig(path.join(config.basePath, config.dtsConfig)),
         RTE.fromPredicate(
           ({ errors }) => errors.length === 0,
           err => new TypesServiceError('Encountered tsconfig diagnostic errors', err),

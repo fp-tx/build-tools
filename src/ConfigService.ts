@@ -56,7 +56,7 @@ export type ConfigParameters = {
   readonly emitTypes?: boolean
 
   /**
-   * A tsconfig used in `dts` generation
+   * A tsconfig used in `dts` generation. Note: this is relative to `basePath`.
    *
    * Note: outdir, declaration, declarationMap, emitDeclarationOnly are ignored
    */
