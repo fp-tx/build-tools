@@ -1,4 +1,4 @@
-import { RealFileSystemHost } from '@ts-morph/common'
+import { getCompilerOptionsFromTsConfig, RealFileSystemHost } from '@ts-morph/common'
 import { type Endomorphism } from 'fp-ts/lib/Endomorphism.js'
 import { flow, pipe, tuple } from 'fp-ts/lib/function.js'
 import * as O from 'fp-ts/lib/Option.js'
@@ -246,7 +246,10 @@ export const rewriteRelativeImportSpecifier: (
   return node
 }
 
-const sharedConfig = (host: RealFileSystemHost) =>
+const sharedConfig = (
+  host: RealFileSystemHost,
+  resolvedCompilerOptions: ts.CompilerOptions,
+) =>
   pipe(
     config,
     RTE.flatMapTaskEither(
@@ -255,6 +258,7 @@ const sharedConfig = (host: RealFileSystemHost) =>
           new Project({
             skipAddingFilesFromTsConfig: true,
             compilerOptions: {
+              ...resolvedCompilerOptions,
               project: path.join(config.basePath, config.dtsConfig),
               emitDeclarationOnly: true,
               sourceMap: true,
@@ -288,12 +292,24 @@ const emitDtsCommon = (
   pipe(
     RTE.Do,
     RTE.apSW('config', config),
-    RTE.apSW('project', sharedConfig(host)),
+    // Parse tsconfig
+    RTE.bindW('compilerOptions', ({ config }) =>
+      pipe(
+        getCompilerOptionsFromTsConfig(path.join(config.basePath, config.dtsConfig)),
+        RTE.fromPredicate(
+          ({ errors }) => errors.length === 0,
+          err => new TypesServiceError('Encountered tsconfig diagnostic errors', err),
+        ),
+        RTE.map(({ options }) => options),
+      ),
+    ),
+    RTE.bindW('project', ({ compilerOptions }) => sharedConfig(host, compilerOptions)),
     RTE.flatMapTaskEither(
       TE.tryCatchK(
         async ({ config, project }) => {
           const compilerOptions = project.getCompilerOptions()
           const diagnosticsHost = ts.createCompilerHost(compilerOptions, true)
+
           const getModuleReference = (
             importPath: string,
             sourceFilename: O.Option<string>,
@@ -372,9 +388,11 @@ export const rewriteOrAddMjs: Endomorphism<string> = fileName => {
     case '':
       return `${fileName}.mjs`
     case '.js':
-      return fileName.replace(/\.js$/, '.mjs')
+    case '.jsx':
+      return fileName.replace(/\.jsx?$/, '.mjs')
     case '.ts':
-      return fileName.replace(/\.ts$/, '.mjs')
+    case '.tsx':
+      return fileName.replace(/\.tsx?$/, '.mjs')
     default:
       return fileName
   }
@@ -386,9 +404,11 @@ export const rewriteOrAddCjs: Endomorphism<string> = fileName => {
     case '':
       return `${fileName}.cjs`
     case '.js':
-      return fileName.replace(/\.js$/, '.cjs')
+    case '.jsx':
+      return fileName.replace(/\.jsx?$/, '.cjs')
     case '.ts':
-      return fileName.replace(/\.ts$/, '.cjs')
+    case '.tsx':
+      return fileName.replace(/\.tsx?$/, '.cjs')
     default:
       return fileName
   }
@@ -401,8 +421,11 @@ export const rewriteOrAddJs: Endomorphism<string> = fileName => {
       return `${fileName}.js`
     case '.js':
       return fileName
+    case '.jsx':
+      return fileName.replace(/\.jsx$/, '.js')
     case '.ts':
-      return fileName.replace(/\.ts$/, '.js')
+    case '.tsx':
+      return fileName.replace(/\.tsx?$/, '.js')
     default:
       return fileName
   }

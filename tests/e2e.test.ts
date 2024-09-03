@@ -19,6 +19,10 @@ describe('test projects', () => {
         // Used to test import remapping from an index file
         // ------------------------------------------------
         'index-ref',
+        // ------------------------------------------------
+        // Used to test JSX libs
+        // ------------------------------------------------
+        'jsx',
       ]),
     ),
   )(
@@ -43,6 +47,6 @@ describe('test projects', () => {
         })
       })
     },
-    10000,
+    20000,
   )
 })

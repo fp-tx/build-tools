@@ -1,15 +1,15 @@
 {
   "compilerOptions": {
-    "module": "Node16",
+    "module": "NodeNext",
     "target": "ESNext",
-    "moduleResolution": "Node16",
+    "moduleResolution": "NodeNext",
     "noEmit": true,
     "strict": true,
     "skipLibCheck": false,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["node", "jest"]
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*.ts", "tests/**/*.tsx?"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/foo.ts", "src/bar.tsx"],
+  "exclude": []
 }

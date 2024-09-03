@@ -1,0 +1,9 @@
+{
+  "name": "jsx",
+  "version": "0.0.1",
+  "devDependencies": {
+    "@fp-tx/build-tools": "file:../../../dist",
+    "@types/react": "^18.3.5",
+    "react": "^18.3.1"
+  }
+}
