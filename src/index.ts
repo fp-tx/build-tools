@@ -53,7 +53,13 @@ export const makeConfig: (
           ),
         flow(
           Build.configuration,
-          _ => ({ ..._, ...extraConfig, ...overrideOptions }),
+          _ => ({
+            ..._,
+            ...extraConfig,
+            ...overrideOptions,
+            // Merge plugins
+            plugins: [...(_.plugins ?? []), ...(extraConfig.plugins ?? [])],
+          }),
           T.of,
         ),
       ),
