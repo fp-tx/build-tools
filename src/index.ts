@@ -27,7 +27,10 @@ export const makeConfig: (
       TE.of(Config.ConfigServiceLive(config)),
       TE.map(configService => ({
         ...configService,
-        ...Types.TypesServiceLive(configService),
+        ...Types.TypesServiceLive({
+          ...configService,
+          ...consoleLoggingService,
+        }),
       })),
       TE.flatMap(services =>
         Build.BuildServiceLive({
@@ -50,7 +53,13 @@ export const makeConfig: (
           ),
         flow(
           Build.configuration,
-          _ => ({ ..._, ...extraConfig, ...overrideOptions }),
+          _ => ({
+            ..._,
+            ...extraConfig,
+            ...overrideOptions,
+            // Merge plugins
+            plugins: [...(_.plugins ?? []), ...(extraConfig.plugins ?? [])],
+          }),
           T.of,
         ),
       ),
