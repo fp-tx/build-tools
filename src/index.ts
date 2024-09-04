@@ -27,7 +27,10 @@ export const makeConfig: (
       TE.of(Config.ConfigServiceLive(config)),
       TE.map(configService => ({
         ...configService,
-        ...Types.TypesServiceLive(configService),
+        ...Types.TypesServiceLive({
+          ...configService,
+          ...consoleLoggingService,
+        }),
       })),
       TE.flatMap(services =>
         Build.BuildServiceLive({
