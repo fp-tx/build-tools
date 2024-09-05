@@ -29,17 +29,34 @@ export class SourceService {
   }
 }
 
-const flattenBy1Regex = (srcDir: string) => new RegExp(`(.*)../${srcDir}(.*)`, 'gm')
+function flattenDirByAtLeast1Regex(srcDir: string) {
+  return new RegExp(`(.*)../${srcDir}(.*)`, 'gm')
+}
+
+const rootDirRegex = /^\.\.\/(?!\.\.\/)(.*).(m|c)?ts$/
 
 const rewriteSource: (srcDir: string, file: string) => (source: string) => string =
   (srcDir, file) => source => {
-    const directory = path.dirname(file)
-    const flattenedBy1 = `${source}`.replace(flattenBy1Regex(srcDir), `$1${srcDir}$2`)
-    const adjusted = path.posix.relative(
-      directory,
-      path.posix.join(directory, flattenedBy1),
-    )
-    return adjusted.startsWith('.') ? adjusted : './' + adjusted
+    const fileIsInRootDir = rootDirRegex.test(source)
+    // If file is from the root directory,
+    // re-point it to the same directory (dist)
+    if (fileIsInRootDir) {
+      const basename = path.basename(source)
+      const adjusted = basename.startsWith('.') ? basename : './' + basename
+      return adjusted
+      // For other files, re-point the src dir to "."
+    } else {
+      const flattenedBy1 = `${source}`.replace(
+        flattenDirByAtLeast1Regex(srcDir),
+        `$1${srcDir}$2`,
+      )
+      const directory = path.dirname(file)
+      const adjusted = path.posix.relative(
+        directory,
+        path.posix.join(directory, flattenedBy1),
+      )
+      return adjusted.startsWith('.') ? adjusted : './' + adjusted
+    }
   }
 
 const getGlob: (

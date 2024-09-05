@@ -53,6 +53,7 @@ export const pkgExports: RTE.ReaderTaskEither<
 type ExportsServiceDeps = {
   readonly files: ReadonlyArray<string>
   readonly type: 'module' | 'commonjs'
+  readonly resolvedIndex: string
 }
 
 const isCapitalized = (s: string): boolean => s !== '' && s[0] === s[0].toUpperCase()
@@ -72,21 +73,45 @@ const FilesOrd: Ord.Ord<string> = {
 }
 
 const stripExtension = (file: string): string => file.replace(/\.[^/.]+$/, '')
-const tsToJs = (file: string): string => './' + file.replace(/\.tsx?$/, '.js')
-const tsToCjs = (file: string): string => './' + file.replace(/\.tsx?$/, '.cjs')
-const tsToGlobal = (file: string): string => './' + file.replace(/\.tsx?$/, '.global.js')
-const tsToGlobalCjs = (file: string): string =>
-  './' + file.replace(/\.tsx?$/, '.global.cjs')
-const tsToMjs = (file: string): string => './' + file.replace(/\.tsx?$/, '.mjs')
-const tsToDts = (config: Required<Config.ConfigParameters>, file: string): string =>
-  './' + path.join(config.srcDir, file.replace(/\.tsx?$/, '.d.ts'))
-const tsToDmts = (config: Required<Config.ConfigParameters>, file: string): string =>
-  './' + path.join(config.srcDir, file.replace(/\.tsx?$/, '.d.mts'))
-const tsToDcts = (config: Required<Config.ConfigParameters>, file: string): string =>
-  './' + path.join(config.srcDir, file.replace(/\.tsx?$/, '.d.cts'))
 
-const exportKey = (indexFile: string, file: string): string =>
-  file === indexFile ? '.' : `./${stripExtension(file)}`
+function relativize(path: string): string {
+  return path.startsWith('.') ? path : './' + path
+}
+
+// Paths for emitted build files
+// NOTE: the paths here are ./dist if there are no root-entrypoints,
+//       and ./dist/src if there are.
+function tsToJs(file: string): string {
+  return relativize(file.replace(/\.tsx?$/, '.js'))
+}
+function tsToCjs(file: string): string {
+  return relativize(file.replace(/\.tsx?$/, '.cjs'))
+}
+function tsToGlobal(file: string): string {
+  return relativize(file.replace(/\.tsx?$/, '.global.js'))
+}
+function tsToGlobalCjs(file: string): string {
+  return relativize(file.replace(/\.tsx?$/, '.global.cjs'))
+}
+function tsToMjs(file: string): string {
+  return relativize(file.replace(/\.tsx?$/, '.mjs'))
+}
+
+// Paths for declaration files,
+// NOTE: the paths determined by entrypoints are preserved
+function tsToDts(file: string): string {
+  return relativize(file.replace(/\.tsx?$/, '.d.ts'))
+}
+function tsToDmts(file: string): string {
+  return relativize(file.replace(/\.tsx?$/, '.d.mts'))
+}
+function tsToDcts(file: string): string {
+  return relativize(file.replace(/\.tsx?$/, '.d.cts'))
+}
+
+const exportKey = (normalizedIndex: string, file: string): string => {
+  return file === normalizedIndex ? '.' : `./${stripExtension(path.basename(file))}`
+}
 
 const Common = pipe(
   RTE.Do,
@@ -107,17 +132,17 @@ type DefaultExports = {
 const addDtsExports = (
   config: Required<Config.ConfigParameters>,
   file: string,
-): TypesExports => (config.emitTypes ? { types: tsToDts(config, file) } : {})
+): TypesExports => (config.emitTypes ? { types: tsToDts(file) } : {})
 
 const addDmtsExports = (
   config: Required<Config.ConfigParameters>,
   file: string,
-): TypesExports => (config.emitTypes ? { types: tsToDmts(config, file) } : {})
+): TypesExports => (config.emitTypes ? { types: tsToDmts(file) } : {})
 
 const addDctsExports = (
   config: Required<Config.ConfigParameters>,
   file: string,
-): TypesExports => (config.emitTypes ? { types: tsToDcts(config, file) } : {})
+): TypesExports => (config.emitTypes ? { types: tsToDcts(file) } : {})
 
 type ToExports = {
   readonly types: (
@@ -207,12 +232,15 @@ const toExportsService = (
           ),
         )
       }
-      const indexFile = config.buildMode.indexExport ?? 'index.ts'
+      const normalizedIndex = path.join(
+        path.dirname(deps.resolvedIndex),
+        path.basename(deps.resolvedIndex),
+      )
       return pipe(
         deps.files,
         RA.sort(FilesOrd),
         RA.foldMap(RecordMonoid)(file =>
-          RR.singleton(exportKey(indexFile, file), {
+          RR.singleton(exportKey(normalizedIndex, file), {
             ...(i === undefined
               ? {}
               : {
@@ -234,15 +262,9 @@ const toExportsService = (
         ),
         _ => ({ ..._, './package.json': './package.json' }),
         ExportsService.of(
-          config.buildMode.indexExport
-            ? r?.default(config.buildMode.indexExport)
-            : undefined,
-          config.buildMode.indexExport
-            ? i?.default(config.buildMode.indexExport)
-            : undefined,
-          config.buildMode.indexExport
-            ? (r ?? i)?.types(config, config.buildMode.indexExport)['types']
-            : undefined,
+          r?.default(deps.resolvedIndex),
+          i?.default(deps.resolvedIndex),
+          (r ?? i)?.types(config, deps.resolvedIndex)['types'],
         ),
       )
     }),

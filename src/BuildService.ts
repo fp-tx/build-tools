@@ -2,10 +2,12 @@ import * as color from 'colorette'
 import { esbuildPluginFilePathExtensions } from 'esbuild-plugin-file-path-extensions'
 import * as E from 'fp-ts/lib/Either.js'
 import { pipe, tuple } from 'fp-ts/lib/function.js'
+import * as O from 'fp-ts/lib/Option.js'
 import type * as R from 'fp-ts/lib/Reader.js'
 import * as RT from 'fp-ts/lib/ReaderTask.js'
 import * as RTE from 'fp-ts/lib/ReaderTaskEither.js'
 import * as RA from 'fp-ts/lib/ReadonlyArray.js'
+import * as RNEA from 'fp-ts/lib/ReadonlyNonEmptyArray.js'
 import * as RR from 'fp-ts/lib/ReadonlyRecord.js'
 import type * as T from 'fp-ts/lib/Task.js'
 import path from 'path'
@@ -31,6 +33,16 @@ export class BuildService {
   [BuildServiceSymbol]: BuildServiceMethods
   constructor(buildServiceMethods: BuildServiceMethods) {
     this[BuildServiceSymbol] = buildServiceMethods
+  }
+}
+
+export class BuildServiceError extends Error {
+  override readonly name = 'BuildServiceError'
+  constructor(
+    readonly context: string,
+    readonly error: unknown,
+  ) {
+    super(context)
   }
 }
 
@@ -72,23 +84,55 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
     Files.FileService &
     Src.SourceService &
     Types.TypesService,
-  Files.FileServiceError | Pkg.PackageJsonReadError | Types.TypesServiceError,
+  | BuildServiceError
+  | Files.FileServiceError
+  | Pkg.PackageJsonReadError
+  | Types.TypesServiceError,
   BuildService
 > = pipe(
   RTE.Do,
   RTE.apSW('config', config),
   RTE.bindW('entrypoints', ({ config }) =>
     config.buildMode.type === 'Single'
-      ? RTE.right(
-          RA.of(path.join(config.basePath, config.srcDir, config.buildMode.entrypoint)),
-        )
-      : Files.glob(config.buildMode.entrypointGlobs),
+      ? RTE.right(RNEA.of(path.join(config.basePath, config.buildMode.entrypoint)))
+      : pipe(
+          Files.glob(config.buildMode.entrypointGlobs),
+          RTE.flatMapOption(
+            RNEA.fromReadonlyArray,
+            () =>
+              new BuildServiceError(
+                '`entrypointGlobs` must resolve to a non-empty array',
+                null,
+              ),
+          ),
+        ),
   ),
-  RTE.let('files', ({ entrypoints }) =>
-    pipe(
-      entrypoints,
-      RA.map(p => path.basename(p)),
-    ),
+  RTE.let('resolvedIndex', ({ config, entrypoints }) =>
+    config.buildMode.type === 'Single'
+      ? config.buildMode.entrypoint
+      : config.buildMode.indexExport ??
+        pipe(
+          entrypoints,
+          // Choose index.ts first
+          RA.findFirst(entrypoint => entrypoint.includes('index.ts')),
+          O.alt(() =>
+            pipe(
+              entrypoints,
+              // then choose any entrypoint containing index
+              RA.findFirst(entrypoint => entrypoint.includes('index')),
+            ),
+          ),
+          O.getOrElse(() =>
+            // fallback to the only entrypoint
+            RNEA.head(entrypoints),
+          ),
+        ),
+  ),
+  RTE.let(
+    'onlyRootEntrypoints',
+    ({ config, entrypoints, resolvedIndex }) =>
+      !resolvedIndex.includes(config.srcDir) &&
+      !entrypoints.some(entrypoint => entrypoint.includes(config.srcDir)),
   ),
   RTE.bindW('pkg', ({ config }) =>
     pipe(
@@ -102,8 +146,9 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
   RTE.bindW(
     'packageJson',
     ({
-      files,
+      entrypoints,
       config,
+      resolvedIndex,
       pkg: {
         name,
         version,
@@ -119,7 +164,9 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
     }) =>
       pipe(
         RTE.ask<ConfigService>(),
-        RTE.flatMapTaskEither(Exports.ExportsServiceLive({ files, type })),
+        RTE.flatMapTaskEither(
+          Exports.ExportsServiceLive({ files: entrypoints, type, resolvedIndex }),
+        ),
         RTE.flatMapTaskEither(Exports.pkgExports),
         RTE.map(
           ([exports, main, module, types]): RR.ReadonlyRecord<string, unknown> => ({
@@ -131,8 +178,8 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
             type,
             main,
             module,
-            exports,
             types,
+            exports,
             ...pipe(
               rest,
               RR.filterWithIndex(key => !config.omittedPackageKeys.includes(key)),
@@ -165,7 +212,7 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
       RTE.map(RR.fromEntries),
     ),
   ),
-  RTE.bindW('onSuccess', ({ config, packageJson, pkg, extraFiles }) =>
+  RTE.bindW('onSuccess', ({ entrypoints, config, packageJson, pkg, extraFiles }) =>
     pipe(
       RTE.Do,
       RTE.apSW('configService', RTE.ask<ConfigService>()),
@@ -228,6 +275,7 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
                 ),
               ),
             ),
+            // Copy `srcDir` files to dist for source maps
             RTE.tap(() =>
               Files.copyDirectory(
                 config.srcDir,
@@ -237,6 +285,30 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
             ),
             RTE.tapReaderTask(() =>
               Log.info(color.magenta('PCK') + color.whiteBright(' Copied source files')),
+            ),
+            // Copy non-`srcDir` entrypoints to dist
+            RTE.tap(() =>
+              pipe(
+                entrypoints,
+                RA.wither(RTE.ApplicativePar)(
+                  (
+                    entrypoint,
+                  ): RTE.ReaderTaskEither<
+                    Files.FileService,
+                    Files.FileServiceError,
+                    O.Option<void>
+                  > =>
+                    rootDirRegex.test(entrypoint)
+                      ? RTE.of(O.none)
+                      : pipe(
+                          Files.copyFile(
+                            entrypoint,
+                            path.join(config.basePath, config.outDir, entrypoint),
+                          ),
+                          RTE.as(O.of(void 0)),
+                        ),
+                ),
+              ),
             ),
             RTE.tap(() =>
               config.emitTypes
@@ -293,11 +365,13 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
     ),
   ),
   RTE.map(
-    ({ config, entrypoints, onSuccess, pkg }) =>
+    ({ config, entrypoints, onlyRootEntrypoints, onSuccess, pkg }) =>
       new BuildService({
         configuration: {
           entry: RA.toArray(entrypoints),
-          outDir: config.outDir,
+          outDir: onlyRootEntrypoints
+            ? config.outDir
+            : path.join(config.outDir, config.srcDir),
           format: [
             ...(config.buildType === 'dual'
               ? ['cjs' as const, 'esm' as const]
@@ -316,6 +390,8 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
       }),
   ),
 )
+
+const rootDirRegex = /^\.\/(.*).(m|c)?ts/
 
 export const configuration: R.Reader<
   BuildService,

@@ -6,7 +6,7 @@ export default makeConfig(
     buildType: 'dual',
     buildMode: {
       type: 'Single',
-      entrypoint: 'foo.ts',
+      entrypoint: './src/foo.ts',
     },
     srcDir: './src',
     outDir: './dist',

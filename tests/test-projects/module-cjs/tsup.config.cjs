@@ -6,7 +6,7 @@ module.exports = makeConfig(
     buildType: 'cjs',
     buildMode: {
       type: 'Single',
-      entrypoint: 'foo.ts',
+      entrypoint: './src/foo.ts',
     },
     srcDir: './src',
     outDir: './dist',

@@ -1,4 +1,4 @@
-import { makeConfig } from './src'
+import { makeConfig } from './src/index'
 
 export default makeConfig(
   {
@@ -6,7 +6,7 @@ export default makeConfig(
     iife: true,
     buildMode: {
       type: 'Single',
-      entrypoint: 'index.ts',
+      entrypoint: './src/index.ts',
     },
     copyFiles: ['README.md', 'LICENSE'],
   },
