@@ -132,7 +132,7 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
     'onlyRootEntrypoints',
     ({ config, entrypoints, resolvedIndex }) =>
       !resolvedIndex.includes(config.srcDir) &&
-      !entrypoints.some(entrypoint => entrypoint.includes(config.srcDir)),
+      entrypoints.some(entrypoint => entrypoint.includes(config.srcDir)),
   ),
   RTE.bindW('pkg', ({ config }) =>
     pipe(

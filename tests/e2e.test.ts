@@ -24,13 +24,17 @@ describe('test projects', () => {
         // ------------------------------------------------
         'jsx',
         // ------------------------------------------------
-        // Used to test multi-entrypoint ./src based dual libs
+        // Used to test multi-entrypoint hybrid based dual libs
         // ------------------------------------------------
-        'multi-src-dual',
+        'multi-hybrid-dual',
         // ------------------------------------------------
         // Used to test multi-entrypoint root based dual libs
         // ------------------------------------------------
         'multi-root-dual',
+        // ------------------------------------------------
+        // Used to test single-entrypoint src based dual libs
+        // ------------------------------------------------
+        'single-src-dual',
       ]),
     ),
   )(
