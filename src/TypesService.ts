@@ -418,13 +418,7 @@ function emitDtsCommon(
               project
                 .addSourceFilesAtPaths(
                   config.buildMode.type === 'Single'
-                    ? [
-                        path.join(
-                          config.basePath,
-                          config.srcDir,
-                          config.buildMode.entrypoint,
-                        ),
-                      ]
+                    ? [path.join(config.basePath, config.buildMode.entrypoint)]
                     : config.buildMode.entrypointGlobs,
                 )
                 .map(sf => sf.getFilePath()),

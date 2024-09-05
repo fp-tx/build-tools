@@ -30,6 +30,10 @@ type FileServiceMethods = {
     destinationPath: string,
     options?: fs.CopyOptions,
   ) => TE.TaskEither<FileServiceError, void>
+  readonly copyFile: (
+    targetPath: string,
+    destinationPath: string,
+  ) => TE.TaskEither<FileServiceError, void>
   readonly glob: (
     patterns: string | ReadonlyArray<string>,
     options?: g.GlobOptionsWithFileTypesUnset,
@@ -96,6 +100,21 @@ const copyDirectory_: (
   TE.asUnit,
 )
 
+export const copyFile_: (
+  targetFile: string,
+  destinationFile: string,
+) => TE.TaskEither<FileServiceError, void> = flow(
+  TE.taskify(
+    (
+      targetPath: string,
+      destinationPath: string,
+      callback: (err: null | Error) => void,
+    ) => fs.cp(targetPath, destinationPath, callback),
+  ),
+  TE.mapError(FileServiceError.of),
+  TE.asUnit,
+)
+
 export const glob_: (
   patterns: string | ReadonlyArray<string>,
   options?: g.GlobOptionsWithFileTypesUnset,
@@ -108,6 +127,7 @@ export const FileServiceLive: FileService = new FileService({
   readDirectory: readDirectory_,
   getFile: getFile_,
   glob: glob_,
+  copyFile: copyFile_,
   writeFile: (path, content, options = 'utf8') => writeFile_(path, content, options),
   copyDirectory: (t, d, o = {}) => copyDirectory_(t, d, o),
 })
@@ -173,5 +193,19 @@ export const copyDirectory: (
     RTE.ask<FileService>(),
     RTE.flatMapTaskEither(service =>
       service[FileServiceSymbol].copyDirectory(targetPath, destinationPath, options),
+    ),
+  )
+
+export const copyFile: (
+  targetPath: string,
+  destinationPath: string,
+) => RTE.ReaderTaskEither<FileService, FileServiceError, void> = (
+  targetPath,
+  destinationPath,
+) =>
+  pipe(
+    RTE.ask<FileService>(),
+    RTE.flatMapTaskEither(service =>
+      service[FileServiceSymbol].copyDirectory(targetPath, destinationPath),
     ),
   )
