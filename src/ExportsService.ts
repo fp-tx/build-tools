@@ -79,7 +79,8 @@ function relativize(path: string): string {
 }
 
 // Paths for emitted build files
-// NOTE: the paths here are lifted to the root level (dist)
+// NOTE: the paths here are ./dist if there are no root-entrypoints,
+//       and ./dist/src if there are.
 function tsToJs(file: string): string {
   return relativize(file.replace(/\.tsx?$/, '.js'))
 }

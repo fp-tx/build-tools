@@ -31,10 +31,17 @@ describe('test projects', () => {
         // Used to test multi-entrypoint root based dual libs
         // ------------------------------------------------
         'multi-root-dual',
+        //
+        // NOTE: multi-entrypoint src based libs will not pass node-10 tests
+        //
         // ------------------------------------------------
         // Used to test single-entrypoint src based dual libs
         // ------------------------------------------------
         'single-src-dual',
+        // ------------------------------------------------
+        // Used to test single-entrypoint root based dual libs
+        // ------------------------------------------------
+        'single-root-dual',
       ]),
     ),
   )(
