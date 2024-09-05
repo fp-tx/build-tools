@@ -23,6 +23,14 @@ describe('test projects', () => {
         // Used to test JSX libs
         // ------------------------------------------------
         'jsx',
+        // ------------------------------------------------
+        // Used to test multi-entrypoint ./src based dual libs
+        // ------------------------------------------------
+        'multi-src-dual',
+        // ------------------------------------------------
+        // Used to test multi-entrypoint root based dual libs
+        // ------------------------------------------------
+        'multi-root-dual',
       ]),
     ),
   )(

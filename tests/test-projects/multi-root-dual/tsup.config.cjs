@@ -5,8 +5,8 @@ module.exports = makeConfig(
     basePath: '.',
     buildType: 'dual',
     buildMode: {
-      type: 'Single',
-      entrypoint: './src/foo.ts',
+      type: 'Multi',
+      entrypointGlobs: ['./foo.*.ts'],
     },
     srcDir: './src',
     outDir: './dist',

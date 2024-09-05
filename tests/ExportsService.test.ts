@@ -19,18 +19,19 @@ describe('ExportsService', () => {
       ExportsService.ExportsServiceLive({
         files: ['foo.ts', 'bar.ts'],
         type: 'module',
+        resolvedIndex: 'foo.ts',
       }),
       tuple(
         {
           '.': {
-            import: { types: './src/foo.d.ts', default: './foo.js' },
-            require: { types: './src/foo.d.cts', default: './foo.cjs' },
+            import: { types: './foo.d.ts', default: './foo.js' },
+            require: { types: './foo.d.cts', default: './foo.cjs' },
           },
           './package.json': './package.json',
         },
         './foo.cjs',
         './foo.js',
-        './src/foo.d.cts',
+        './foo.d.cts',
       ),
     ),
     tuple(
@@ -39,31 +40,32 @@ describe('ExportsService', () => {
         buildMode: {
           type: 'Multi',
           entrypointGlobs: ['./src/foo.*.ts'],
-          indexExport: 'foo.ts',
+          indexExport: './src/foo.ts',
         },
       }),
       ExportsService.ExportsServiceLive({
-        files: ['foo.ts', 'foo.a.ts', 'foo.b.ts'],
+        files: ['src/foo.ts', 'src/foo.a.ts', 'src/foo.b.ts'],
         type: 'module',
+        resolvedIndex: 'src/foo.ts',
       }),
       tuple(
         {
           '.': {
-            import: { types: './src/foo.d.ts', default: './foo.js' },
-            require: { types: './src/foo.d.cts', default: './foo.cjs' },
+            import: { types: './src/foo.d.ts', default: './src/foo.js' },
+            require: { types: './src/foo.d.cts', default: './src/foo.cjs' },
           },
           './foo.a': {
-            import: { types: './src/foo.a.d.ts', default: './foo.a.js' },
-            require: { types: './src/foo.a.d.cts', default: './foo.a.cjs' },
+            import: { types: './src/foo.a.d.ts', default: './src/foo.a.js' },
+            require: { types: './src/foo.a.d.cts', default: './src/foo.a.cjs' },
           },
           './foo.b': {
-            import: { types: './src/foo.b.d.ts', default: './foo.b.js' },
-            require: { types: './src/foo.b.d.cts', default: './foo.b.cjs' },
+            import: { types: './src/foo.b.d.ts', default: './src/foo.b.js' },
+            require: { types: './src/foo.b.d.cts', default: './src/foo.b.cjs' },
           },
           './package.json': './package.json',
         },
-        './foo.cjs',
-        './foo.js',
+        './src/foo.cjs',
+        './src/foo.js',
         './src/foo.d.cts',
       ),
     ),
@@ -75,18 +77,19 @@ describe('ExportsService', () => {
       ExportsService.ExportsServiceLive({
         files: ['foo.ts', 'bar.ts'],
         type: 'commonjs',
+        resolvedIndex: 'foo.ts',
       }),
       tuple(
         {
           '.': {
-            import: { types: './src/foo.d.mts', default: './foo.mjs' },
-            require: { types: './src/foo.d.ts', default: './foo.js' },
+            import: { types: './foo.d.mts', default: './foo.mjs' },
+            require: { types: './foo.d.ts', default: './foo.js' },
           },
           './package.json': './package.json',
         },
         './foo.js',
         './foo.mjs',
-        './src/foo.d.ts',
+        './foo.d.ts',
       ),
     ),
     tuple(
@@ -99,27 +102,28 @@ describe('ExportsService', () => {
         },
       }),
       ExportsService.ExportsServiceLive({
-        files: ['foo.ts', 'foo.a.ts', 'foo.b.ts'],
+        files: ['src/foo.ts', 'src/foo.a.ts', 'src/foo.b.ts'],
         type: 'commonjs',
+        resolvedIndex: 'src/foo.ts',
       }),
       tuple(
         {
           '.': {
-            import: { types: './src/foo.d.mts', default: './foo.mjs' },
-            require: { types: './src/foo.d.ts', default: './foo.js' },
+            import: { types: './src/foo.d.mts', default: './src/foo.mjs' },
+            require: { types: './src/foo.d.ts', default: './src/foo.js' },
           },
           './foo.a': {
-            import: { types: './src/foo.a.d.mts', default: './foo.a.mjs' },
-            require: { types: './src/foo.a.d.ts', default: './foo.a.js' },
+            import: { types: './src/foo.a.d.mts', default: './src/foo.a.mjs' },
+            require: { types: './src/foo.a.d.ts', default: './src/foo.a.js' },
           },
           './foo.b': {
-            import: { types: './src/foo.b.d.mts', default: './foo.b.mjs' },
-            require: { types: './src/foo.b.d.ts', default: './foo.b.js' },
+            import: { types: './src/foo.b.d.mts', default: './src/foo.b.mjs' },
+            require: { types: './src/foo.b.d.ts', default: './src/foo.b.js' },
           },
           './package.json': './package.json',
         },
-        './foo.js',
-        './foo.mjs',
+        './src/foo.js',
+        './src/foo.mjs',
         './src/foo.d.ts',
       ),
     ),
@@ -132,17 +136,18 @@ describe('ExportsService', () => {
       ExportsService.ExportsServiceLive({
         files: ['foo.ts', 'bar.ts'],
         type: 'module',
+        resolvedIndex: 'foo.ts',
       }),
       tuple(
         {
           '.': {
-            require: { types: './src/foo.d.cts', default: './foo.cjs' },
+            require: { types: './foo.d.cts', default: './foo.cjs' },
           },
           './package.json': './package.json',
         },
         './foo.cjs',
         undefined,
-        './src/foo.d.cts',
+        './foo.d.cts',
       ),
     ),
     tuple(
@@ -156,23 +161,24 @@ describe('ExportsService', () => {
         buildType: 'cjs',
       }),
       ExportsService.ExportsServiceLive({
-        files: ['foo.ts', 'foo.a.ts', 'foo.b.ts'],
+        files: ['src/foo.ts', 'src/foo.a.ts', 'src/foo.b.ts'],
         type: 'module',
+        resolvedIndex: 'src/foo.ts',
       }),
       tuple(
         {
           '.': {
-            require: { types: './src/foo.d.cts', default: './foo.cjs' },
+            require: { types: './src/foo.d.cts', default: './src/foo.cjs' },
           },
           './foo.a': {
-            require: { types: './src/foo.a.d.cts', default: './foo.a.cjs' },
+            require: { types: './src/foo.a.d.cts', default: './src/foo.a.cjs' },
           },
           './foo.b': {
-            require: { types: './src/foo.b.d.cts', default: './foo.b.cjs' },
+            require: { types: './src/foo.b.d.cts', default: './src/foo.b.cjs' },
           },
           './package.json': './package.json',
         },
-        './foo.cjs',
+        './src/foo.cjs',
         undefined,
         './src/foo.d.cts',
       ),
@@ -186,17 +192,18 @@ describe('ExportsService', () => {
       ExportsService.ExportsServiceLive({
         files: ['foo.ts', 'bar.ts'],
         type: 'commonjs',
+        resolvedIndex: 'foo.ts',
       }),
       tuple(
         {
           '.': {
-            require: { types: './src/foo.d.ts', default: './foo.js' },
+            require: { types: './foo.d.ts', default: './foo.js' },
           },
           './package.json': './package.json',
         },
         './foo.js',
         undefined,
-        './src/foo.d.ts',
+        './foo.d.ts',
       ),
     ),
     tuple(
@@ -205,28 +212,29 @@ describe('ExportsService', () => {
         buildMode: {
           type: 'Multi',
           entrypointGlobs: ['./src/foo.*.ts'],
-          indexExport: 'foo.ts',
+          indexExport: 'src/foo.ts',
         },
         buildType: 'cjs',
       }),
       ExportsService.ExportsServiceLive({
-        files: ['foo.ts', 'foo.a.ts', 'foo.b.ts'],
+        files: ['src/foo.ts', 'src/foo.a.ts', 'src/foo.b.ts'],
         type: 'commonjs',
+        resolvedIndex: 'src/foo.ts',
       }),
       tuple(
         {
           '.': {
-            require: { types: './src/foo.d.ts', default: './foo.js' },
+            require: { types: './src/foo.d.ts', default: './src/foo.js' },
           },
           './foo.a': {
-            require: { types: './src/foo.a.d.ts', default: './foo.a.js' },
+            require: { types: './src/foo.a.d.ts', default: './src/foo.a.js' },
           },
           './foo.b': {
-            require: { types: './src/foo.b.d.ts', default: './foo.b.js' },
+            require: { types: './src/foo.b.d.ts', default: './src/foo.b.js' },
           },
           './package.json': './package.json',
         },
-        './foo.js',
+        './src/foo.js',
         undefined,
         './src/foo.d.ts',
       ),
@@ -240,17 +248,18 @@ describe('ExportsService', () => {
       ExportsService.ExportsServiceLive({
         files: ['foo.ts', 'bar.ts'],
         type: 'commonjs',
+        resolvedIndex: 'foo.ts',
       }),
       tuple(
         {
           '.': {
-            import: { types: './src/foo.d.mts', default: './foo.mjs' },
+            import: { types: './foo.d.mts', default: './foo.mjs' },
           },
           './package.json': './package.json',
         },
         undefined,
         './foo.mjs',
-        './src/foo.d.mts',
+        './foo.d.mts',
       ),
     ),
     tuple(
@@ -259,29 +268,30 @@ describe('ExportsService', () => {
         buildMode: {
           type: 'Multi',
           entrypointGlobs: ['./src/foo.*.ts'],
-          indexExport: 'foo.ts',
+          indexExport: 'src/foo.ts',
         },
         buildType: 'esm',
       }),
       ExportsService.ExportsServiceLive({
-        files: ['foo.ts', 'foo.a.ts', 'foo.b.ts'],
+        files: ['src/foo.ts', 'src/foo.a.ts', 'src/foo.b.ts'],
         type: 'commonjs',
+        resolvedIndex: 'src/foo.ts',
       }),
       tuple(
         {
           '.': {
-            import: { types: './src/foo.d.mts', default: './foo.mjs' },
+            import: { types: './src/foo.d.mts', default: './src/foo.mjs' },
           },
           './foo.a': {
-            import: { types: './src/foo.a.d.mts', default: './foo.a.mjs' },
+            import: { types: './src/foo.a.d.mts', default: './src/foo.a.mjs' },
           },
           './foo.b': {
-            import: { types: './src/foo.b.d.mts', default: './foo.b.mjs' },
+            import: { types: './src/foo.b.d.mts', default: './src/foo.b.mjs' },
           },
           './package.json': './package.json',
         },
         undefined,
-        './foo.mjs',
+        './src/foo.mjs',
         './src/foo.d.mts',
       ),
     ),
@@ -294,17 +304,18 @@ describe('ExportsService', () => {
       ExportsService.ExportsServiceLive({
         files: ['foo.ts', 'bar.ts'],
         type: 'module',
+        resolvedIndex: 'foo.ts',
       }),
       tuple(
         {
           '.': {
-            import: { types: './src/foo.d.ts', default: './foo.js' },
+            import: { types: './foo.d.ts', default: './foo.js' },
           },
           './package.json': './package.json',
         },
         undefined,
         './foo.js',
-        './src/foo.d.ts',
+        './foo.d.ts',
       ),
     ),
     tuple(
@@ -313,29 +324,30 @@ describe('ExportsService', () => {
         buildMode: {
           type: 'Multi',
           entrypointGlobs: ['./src/foo.*.ts'],
-          indexExport: 'foo.ts',
+          indexExport: 'src/foo.ts',
         },
         buildType: 'esm',
       }),
       ExportsService.ExportsServiceLive({
-        files: ['foo.ts', 'foo.a.ts', 'foo.b.ts'],
+        files: ['src/foo.ts', 'src/foo.a.ts', 'src/foo.b.ts'],
         type: 'module',
+        resolvedIndex: 'src/foo.ts',
       }),
       tuple(
         {
           '.': {
-            import: { types: './src/foo.d.ts', default: './foo.js' },
+            import: { types: './src/foo.d.ts', default: './src/foo.js' },
           },
           './foo.a': {
-            import: { types: './src/foo.a.d.ts', default: './foo.a.js' },
+            import: { types: './src/foo.a.d.ts', default: './src/foo.a.js' },
           },
           './foo.b': {
-            import: { types: './src/foo.b.d.ts', default: './foo.b.js' },
+            import: { types: './src/foo.b.d.ts', default: './src/foo.b.js' },
           },
           './package.json': './package.json',
         },
         undefined,
-        './foo.js',
+        './src/foo.js',
         './src/foo.d.ts',
       ),
     ),
