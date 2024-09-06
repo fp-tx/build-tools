@@ -159,6 +159,7 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
         main: _,
         module: __,
         exports: ___,
+        types: ____,
         ...rest
       },
     }) =>
