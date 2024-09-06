@@ -1,6 +1,10 @@
 {
   "name": "jsx",
   "version": "0.0.1",
+  "types": "./this/folder/doesn-t/exist.d.ts",
+  "main": "./this/folder/also/doesn-t/exit/index.js",
+  "module": "./this/folder/exists/jk.mjs",
+  "exports": "./just-wrong.cjs",
   "devDependencies": {
     "@fp-tx/build-tools": "file:../../../dist",
     "@types/react": "^18.3.5",
