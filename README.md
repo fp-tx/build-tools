@@ -8,7 +8,7 @@
 
 # build-tools
 
-`@fp-tx/build-tools` is a thin wrapper around `tsup` for the purpose of building dual ESM/CJS packages. It contains a chief export `makeConfig` which will read from a configurable source directory and determine which files to include as entrypoints. Using these entrypoints, it also adds a dynamic "exports" field with `import` and `default` fields based on the determined entrypoints and module type (determined by `package.json > type`).
+`@fp-tx/build-tools` is a thin wrapper around `tsup` for the purpose of building dual ESM/CJS packages. It contains a chief export `makeConfig` which will read from a configurable source directory and determine which files to include as entrypoints. Using these entrypoints, it also adds a dynamic "exports" field with `import` and `default` fields based on the determined entrypoints and module type (determined by `package.json > type`). Additionally it adds the appropriate `main`, `module`, `types`, and `bin` (if applicable) to the emitted package.json.
 
 Additionally, `build-tools` will emit smart declaration files with rewritten import, export, and `declare module` paths.
 
@@ -24,7 +24,7 @@ const config = makeConfig(
     buildType: 'dual',
     buildMode: {
       type: 'Single',
-      entrypoint: 'index.ts',
+      entrypoint: './src/index.ts',
     },
     iife: false,
 
@@ -71,15 +71,17 @@ npm install -D tsup @fp-tx/build-tools
 
 ## Configuration Parameters
 
-| Parameter          | Type                    | Description                                                                                    | Default                                      |
-| ------------------ | ----------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| iife               | `boolean`               | Include IIFE generation as fallback. This setting is recommended for single-target builds      | `false`                                      |
-| emitTypes          | `boolean`               | Generate `.d.ts`, and `.d.cts` or `.d.mts` files                                               | `true`                                       |
-| dtsConfig          | `string`                | The `tsconfig.json` for types generation                                                       | `tsconfig.json`                              |
-| srcDir             | `string`                | The source directory to read from                                                              | `'src'`                                      |
-| basePath           | `string`                | The current working directory                                                                  | `'.'`                                        |
-| buildMode          | `BuildMode`             | Determines the package entrypoints, "Single" and `entrypoint` or "Multi" and `entrypointGlobs` | `{ type: "Single", entrypoint: "index.ts" }` |
-| buildType          | `cjs`, `esm`, or `dual` | Determines the output module format along with `package.json > type`                           | `dual`                                       |
-| omittedPackageKeys | `ReadonlyArray<string>` | Array of keys to omit from the package.json file                                               | `["devDependencies", "scripts"]`             |
-| copyFiles          | `ReadonlyArray<string>` | Whether to copy non-typescript files                                                           | `['README.md', 'LICENSE']`                   |
-| outDir             | `string`                | The output directory                                                                           | `dist`                                       |
+| Parameter            | Type                                 | Description                                                                                                          | Default                                      |
+| -------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| iife                 | `boolean`                            | Include IIFE generation as fallback. This setting is recommended for single-target builds                            | `false`                                      |
+| emitTypes            | `boolean`                            | Generate `.d.ts`, and `.d.cts` or `.d.mts` files                                                                     | `true`                                       |
+| dtsConfig            | `string`                             | The `tsconfig.json` for types generation                                                                             | `tsconfig.json`                              |
+| srcDir               | `string`                             | The source directory to read from                                                                                    | `'src'`                                      |
+| basePath             | `string`                             | The current working directory                                                                                        | `'.'`                                        |
+| buildMode            | `BuildMode`                          | Determines the package entrypoints, "Single" and `entrypoint` or "Multi" and `entrypointGlobs`                       | `{ type: "Single", entrypoint: "index.ts" }` |
+| buildType            | `cjs`, `esm`, or `dual`              | Determines the output module format along with `package.json > type`                                                 | `dual`                                       |
+| omittedPackageKeys   | `ReadonlyArray<string>`              | Array of keys to omit from the package.json file                                                                     | `["devDependencies", "scripts"]`             |
+| copyFiles            | `ReadonlyArray<string>`              | Whether to copy non-typescript files                                                                                 | `['README.md', 'LICENSE']`                   |
+| outDir               | `string`                             | The output directory                                                                                                 | `dist`                                       |
+| dtsCompilerOverrides | `Partial<CompilerOptions>`           | Overrides to override build-tools imposed tsconfig defaults. **Only use this option if you know what you are doing** | `{}`                                         |
+| bin                  | `string` or `Record<string, string>` | `ts` file entrypoints to fill the emitted package `bin` field                                                        | `null`                                       |
