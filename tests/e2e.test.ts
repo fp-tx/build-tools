@@ -5,8 +5,6 @@ import { promisify } from 'node:util'
 import { pipe } from 'fp-ts/lib/function'
 import * as RA from 'fp-ts/lib/ReadonlyArray'
 
-// import { makeConfig } from '../src'
-
 describe('test projects', () => {
   test.each(
     pipe(
@@ -42,6 +40,10 @@ describe('test projects', () => {
         // Used to test single-entrypoint root based dual libs
         // ------------------------------------------------
         'single-root-dual',
+        // ------------------------------------------------
+        // Used to test usage of the bin field
+        // ------------------------------------------------
+        'bin-cjs-dual',
       ]),
     ),
   )(

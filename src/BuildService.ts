@@ -107,6 +107,35 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
           ),
         ),
   ),
+  // Validate Bin Field
+  RTE.tapEither(({ config, entrypoints }) =>
+    pipe(
+      config.bin,
+      E.fromPredicate(
+        binField => {
+          if (binField === null) {
+            return true
+          } else if (typeof binField === 'string') {
+            return entrypoints.includes(normalizePath(binField))
+          } else {
+            return pipe(
+              binField,
+              RR.every(file => entrypoints.includes(normalizePath(file))),
+            )
+          }
+        },
+        binField =>
+          new BuildServiceError(
+            `The \`bin\` field (${JSON.stringify(
+              binField,
+            )}) files must be listed as entrypoints in \`buildMode\`.  Received entrypoints: [${entrypoints.join(
+              ',',
+            )}]`,
+            null,
+          ),
+      ),
+    ),
+  ),
   RTE.let('resolvedIndex', ({ config, entrypoints }) =>
     config.buildMode.type === 'Single'
       ? config.buildMode.entrypoint
@@ -160,6 +189,7 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
         module: __,
         exports: ___,
         types: ____,
+        bin: preBin,
         ...rest
       },
     }) =>
@@ -170,7 +200,7 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
         ),
         RTE.flatMapTaskEither(Exports.pkgExports),
         RTE.map(
-          ([exports, main, module, types]): RR.ReadonlyRecord<string, unknown> => ({
+          ([exports, main, module, types, bin]): RR.ReadonlyRecord<string, unknown> => ({
             name,
             version,
             description,
@@ -181,6 +211,7 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
             module,
             types,
             exports,
+            bin: bin ?? preBin,
             ...pipe(
               rest,
               RR.filterWithIndex(key => !config.omittedPackageKeys.includes(key)),
@@ -393,6 +424,10 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
 )
 
 const rootDirRegex = /^\.\/(.*).(m|c)?ts/
+
+function normalizePath(p: string): string {
+  return path.join(path.dirname(p), path.basename(p))
+}
 
 export const configuration: R.Reader<
   BuildService,

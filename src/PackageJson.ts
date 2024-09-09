@@ -16,6 +16,7 @@ export const PackageJsonSchema = S.ParseJsonString(
       module: S.Unknown,
       exports: S.Unknown,
       type: S.Optional(S.Literal('module', 'commonjs'), 'commonjs'),
+      bin: S.Unknown,
     },
     S.Unknown,
   ),
