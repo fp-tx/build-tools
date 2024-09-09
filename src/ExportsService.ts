@@ -22,23 +22,26 @@ export class ExportsService {
     main: string | undefined,
     module: string | undefined,
     types: string | undefined,
+    bin: string | Record<string, string> | undefined,
   ]
   constructor(
     pkgExports: Exports,
     main?: string | undefined,
     module?: string | undefined,
     types?: string | undefined,
+    bin?: string | Record<string, string> | undefined,
   ) {
-    this[ExportsServiceSymbol] = [pkgExports, main, module, types]
+    this[ExportsServiceSymbol] = [pkgExports, main, module, types, bin]
   }
   static of: (
     main?: string | undefined,
     module?: string | undefined,
     types?: string | undefined,
+    bin?: string | Record<string, string> | undefined,
   ) => (pkgExports?: Exports) => ExportsService =
-    (main, module, types) =>
+    (main, module, types, bin) =>
     (pkgExports = { './package.json': './package.json' }) =>
-      new ExportsService(pkgExports, main, module, types)
+      new ExportsService(pkgExports, main, module, types, bin)
 }
 
 export const pkgExports: RTE.ReaderTaskEither<
@@ -152,10 +155,15 @@ type ToExports = {
   readonly default: Endomorphism<string>
 }
 
-type ExportsConfig = {
-  readonly import?: ToExports
-  readonly require?: ToExports
-  readonly default?: ToExports
+type ToBin = Endomorphism<string>
+
+interface ExportsConfig {
+  readonly exports: {
+    readonly import?: ToExports
+    readonly require?: ToExports
+    readonly default?: ToExports
+  }
+  readonly bin: ToBin
 }
 
 const addGlobalExportSingle = (
@@ -164,7 +172,7 @@ const addGlobalExportSingle = (
     Required<Config.ConfigParameters>['buildMode'],
     { type: 'Multi' }
   >,
-  { default: d }: ExportsConfig,
+  { exports: { default: d } }: ExportsConfig,
 ): DefaultExports =>
   config.iife
     ? {
@@ -178,7 +186,7 @@ const addGlobalExportSingle = (
 const addGlobalExportMulti = (
   config: Required<Config.ConfigParameters>,
   file: string,
-  { default: d }: ExportsConfig,
+  { exports: { default: d } }: ExportsConfig,
 ): DefaultExports =>
   config.iife
     ? {
@@ -199,7 +207,10 @@ const toExportsService = (
   pipe(
     Common,
     RTE.map(({ config, deps }) => {
-      const { import: i, require: r } = exportsConfig
+      const {
+        exports: { import: i, require: r },
+        bin,
+      } = exportsConfig
       const buildType = config.buildMode.type
       if (buildType === 'Single') {
         return pipe(
@@ -229,6 +240,11 @@ const toExportsService = (
             r?.default(config.buildMode.entrypoint),
             i?.default(config.buildMode.entrypoint),
             (r ?? i)?.types(config, config.buildMode.entrypoint)['types'],
+            config.bin === null
+              ? undefined
+              : typeof config.bin === 'string'
+                ? bin(config.bin)
+                : pipe(config.bin, RR.map(bin)),
           ),
         )
       }
@@ -265,83 +281,106 @@ const toExportsService = (
           r?.default(deps.resolvedIndex),
           i?.default(deps.resolvedIndex),
           (r ?? i)?.types(config, deps.resolvedIndex)['types'],
+          config.bin === null
+            ? undefined
+            : typeof config.bin === 'string'
+              ? bin(config.bin)
+              : pipe(config.bin, RR.map(bin)),
         ),
       )
     }),
   )
 
 const DualTypeModuleExports = toExportsService({
-  import: {
-    types: addDtsExports,
-    default: tsToJs,
+  exports: {
+    import: {
+      types: addDtsExports,
+      default: tsToJs,
+    },
+    require: {
+      types: addDctsExports,
+      default: tsToCjs,
+    },
+    default: {
+      types: addDctsExports,
+      default: tsToGlobalCjs,
+    },
   },
-  require: {
-    types: addDctsExports,
-    default: tsToCjs,
-  },
-  default: {
-    types: addDctsExports,
-    default: tsToGlobalCjs,
-  },
+  bin: tsToJs,
 })
 
 const DualTypeCommonExports = toExportsService({
-  import: {
-    types: addDmtsExports,
-    default: tsToMjs,
+  exports: {
+    import: {
+      types: addDmtsExports,
+      default: tsToMjs,
+    },
+    require: {
+      types: addDtsExports,
+      default: tsToJs,
+    },
+    default: {
+      types: addDtsExports,
+      default: tsToGlobal,
+    },
   },
-  require: {
-    types: addDtsExports,
-    default: tsToJs,
-  },
-  default: {
-    types: addDtsExports,
-    default: tsToGlobal,
-  },
+  bin: tsToJs,
 })
 
 const CjsTypeModuleExports = toExportsService({
-  require: {
-    types: addDctsExports,
-    default: tsToCjs,
+  exports: {
+    require: {
+      types: addDctsExports,
+      default: tsToCjs,
+    },
+    default: {
+      types: addDctsExports,
+      default: tsToGlobalCjs,
+    },
   },
-  default: {
-    types: addDctsExports,
-    default: tsToGlobalCjs,
-  },
+  bin: tsToCjs,
 })
 
 const CjsTypeCommonExports = toExportsService({
-  require: {
-    types: addDtsExports,
-    default: tsToJs,
+  exports: {
+    require: {
+      types: addDtsExports,
+      default: tsToJs,
+    },
+    default: {
+      types: addDtsExports,
+      default: tsToGlobal,
+    },
   },
-  default: {
-    types: addDtsExports,
-    default: tsToGlobal,
-  },
+  bin: tsToJs,
 })
 
 const EsmTypeModuleExports = toExportsService({
-  import: {
-    types: addDtsExports,
-    default: tsToJs,
+  exports: {
+    import: {
+      types: addDtsExports,
+      default: tsToJs,
+    },
+    default: {
+      types: addDctsExports,
+      default: tsToGlobalCjs,
+    },
   },
-  default: {
-    types: addDctsExports,
-    default: tsToGlobalCjs,
-  },
+  bin: tsToJs,
 })
 
 const EsmTypeCommonExports = toExportsService({
-  import: {
-    types: addDmtsExports,
-    default: tsToMjs,
+  exports: {
+    import: {
+      types: addDmtsExports,
+      default: tsToMjs,
+    },
+    default: {
+      types: addDtsExports,
+      default: tsToGlobal,
+    },
   },
-  default: {
-    types: addDtsExports,
-    default: tsToGlobal,
-  },
+  bin: tsToMjs,
 })
 
 export const ExportsServiceLive: (

@@ -12,6 +12,37 @@ function assertRight(e: E.Either<unknown, unknown>): asserts e is E.Right<unknow
 describe('ExportsService', () => {
   test.each([
     tuple(
+      '`bin` field resolution',
+      ConfigServiceLive({
+        buildMode: { type: 'Single', entrypoint: 'foo.ts' },
+        bin: {
+          foo: './foo.ts',
+          bar: './bar.ts',
+        },
+      }),
+      ExportsService.ExportsServiceLive({
+        files: ['foo.ts', 'bar.ts'],
+        type: 'module',
+        resolvedIndex: 'foo.ts',
+      }),
+      tuple(
+        {
+          '.': {
+            import: { types: './foo.d.ts', default: './foo.js' },
+            require: { types: './foo.d.cts', default: './foo.cjs' },
+          },
+          './package.json': './package.json',
+        },
+        './foo.cjs',
+        './foo.js',
+        './foo.d.cts',
+        {
+          foo: './foo.js',
+          bar: './bar.js',
+        },
+      ),
+    ),
+    tuple(
       'Dual "type: module" Single Exports',
       ConfigServiceLive({
         buildMode: { type: 'Single', entrypoint: 'foo.ts' },
@@ -32,6 +63,7 @@ describe('ExportsService', () => {
         './foo.cjs',
         './foo.js',
         './foo.d.cts',
+        undefined,
       ),
     ),
     tuple(
@@ -67,6 +99,7 @@ describe('ExportsService', () => {
         './src/foo.cjs',
         './src/foo.js',
         './src/foo.d.cts',
+        undefined,
       ),
     ),
     tuple(
@@ -90,6 +123,7 @@ describe('ExportsService', () => {
         './foo.js',
         './foo.mjs',
         './foo.d.ts',
+        undefined,
       ),
     ),
     tuple(
@@ -125,6 +159,7 @@ describe('ExportsService', () => {
         './src/foo.js',
         './src/foo.mjs',
         './src/foo.d.ts',
+        undefined,
       ),
     ),
     tuple(
@@ -148,6 +183,7 @@ describe('ExportsService', () => {
         './foo.cjs',
         undefined,
         './foo.d.cts',
+        undefined,
       ),
     ),
     tuple(
@@ -181,6 +217,7 @@ describe('ExportsService', () => {
         './src/foo.cjs',
         undefined,
         './src/foo.d.cts',
+        undefined,
       ),
     ),
     tuple(
@@ -204,6 +241,7 @@ describe('ExportsService', () => {
         './foo.js',
         undefined,
         './foo.d.ts',
+        undefined,
       ),
     ),
     tuple(
@@ -237,6 +275,7 @@ describe('ExportsService', () => {
         './src/foo.js',
         undefined,
         './src/foo.d.ts',
+        undefined,
       ),
     ),
     tuple(
@@ -260,6 +299,7 @@ describe('ExportsService', () => {
         undefined,
         './foo.mjs',
         './foo.d.mts',
+        undefined,
       ),
     ),
     tuple(
@@ -293,6 +333,7 @@ describe('ExportsService', () => {
         undefined,
         './src/foo.mjs',
         './src/foo.d.mts',
+        undefined,
       ),
     ),
     tuple(
@@ -316,6 +357,7 @@ describe('ExportsService', () => {
         undefined,
         './foo.js',
         './foo.d.ts',
+        undefined,
       ),
     ),
     tuple(
@@ -349,6 +391,7 @@ describe('ExportsService', () => {
         undefined,
         './src/foo.js',
         './src/foo.d.ts',
+        undefined,
       ),
     ),
   ])('%s', async (_, configService, service, expected) => {

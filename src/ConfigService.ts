@@ -120,6 +120,16 @@ export type ConfigParameters = {
    * @default { }
    */
   readonly dtsCompilerOverrides?: Partial<CompilerOptions>
+
+  /**
+   * Allows you to specify the package-command entrypoints as TypeScript files that will
+   * be re-pointed to their emitted javascript files.
+   *
+   * @remarks
+   *   **Any binary file specified in this key or record must be an entrypoint, an error
+   *   will be raised if that file is excluded from the entrypoint globs**
+   */
+  readonly bin?: string | Record<string, string> | null
 }
 
 export class ConfigService {
@@ -136,6 +146,7 @@ export class ConfigService {
     emitTypes = true,
     dtsConfig = 'tsconfig.json',
     dtsCompilerOverrides = {},
+    bin = null,
   }: ConfigParameters) {
     this[ConfigServiceSymbol] = {
       buildType,
@@ -149,6 +160,7 @@ export class ConfigService {
       buildMode,
       emitTypes,
       dtsCompilerOverrides,
+      bin,
     }
   }
 }

@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  lru-cache@10.4.3:
+    hash: hawnkdxmi6fjojy7ubkjvqg3r4
+    path: patches/lru-cache@10.4.3.patch
+
 importers:
 
   .:
@@ -91,7 +96,7 @@ importers:
         specifier: ^15.1.0
         version: 15.1.0
       prettier:
-        specifier: ~3.1.0
+        specifier: ~3.1.1
         version: 3.1.1
       prettier-plugin-jsdoc:
         specifier: ^1.1.1
@@ -5710,7 +5715,7 @@ snapshots:
       strip-ansi: 7.1.0
       wrap-ansi: 8.1.0
 
-  lru-cache@10.4.3: {}
+  lru-cache@10.4.3(patch_hash=hawnkdxmi6fjojy7ubkjvqg3r4): {}
 
   lru-cache@5.1.1:
     dependencies:
@@ -6097,7 +6102,7 @@ snapshots:
 
   path-scurry@1.11.1:
     dependencies:
-      lru-cache: 10.4.3
+      lru-cache: 10.4.3(patch_hash=hawnkdxmi6fjojy7ubkjvqg3r4)
       minipass: 7.1.2
 
   path-type@4.0.0: {}
