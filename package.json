@@ -47,7 +47,7 @@
     "prettier-plugin-jsdoc": "^1.1.1",
     "tsc-files": "^1.1.4",
     "tsup": "^8.0.0",
-    "typescript": "^5.5.4"
+    "typescript": "^5.6.0"
   },
   "peerDependencies": {
     "tsup": "^8.0.0"
