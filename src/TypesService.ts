@@ -359,6 +359,7 @@ function sharedConfig(
               module: ts.ModuleKind.Node16,
               target: ts.ScriptTarget.ESNext,
               stripInternal: true,
+              noEmitOnError: true,
               ...config.dtsCompilerOverrides,
             },
             fileSystem: host,
