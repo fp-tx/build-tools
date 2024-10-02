@@ -29,11 +29,13 @@ export class SourceService {
   }
 }
 
-function flattenDirByAtLeast1Regex(srcDir: string) {
+function rewriteSourceFolderDropGrandparentDir(srcDir: string) {
   return new RegExp(`(.*)../${srcDir}(.*)`, 'gm')
 }
 
 const rootDirRegex = /^\.\.\/(?!\.\.\/)(.*).(m|c)?ts$/
+
+export const NEW_SOURCE_DIRECTORY = 'source-files'
 
 const rewriteSource: (srcDir: string, file: string) => (source: string) => string =
   (srcDir, file) => source => {
@@ -42,13 +44,16 @@ const rewriteSource: (srcDir: string, file: string) => (source: string) => strin
     // re-point it to the same directory (dist)
     if (fileIsInRootDir) {
       const basename = path.basename(source)
-      const adjusted = basename.startsWith('.') ? basename : './' + basename
+      const inNewSourceDir = path.join(NEW_SOURCE_DIRECTORY, basename)
+      const adjusted = inNewSourceDir.startsWith('.')
+        ? inNewSourceDir
+        : './' + inNewSourceDir
       return adjusted
       // For other files, re-point the src dir to "."
     } else {
       const flattenedBy1 = `${source}`.replace(
-        flattenDirByAtLeast1Regex(srcDir),
-        `$1${srcDir}$2`,
+        rewriteSourceFolderDropGrandparentDir(srcDir),
+        `$1${NEW_SOURCE_DIRECTORY}/${srcDir}$2`,
       )
       const directory = path.dirname(file)
       const adjusted = path.posix.relative(

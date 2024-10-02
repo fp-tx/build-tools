@@ -351,7 +351,7 @@ function sharedConfig(
               emitDeclarationOnly: true,
               sourceMap: true,
               declaration: true,
-              declarationMap: true,
+              declarationMap: config.emitDeclarationMaps,
               noEmit: false,
               rootDir: config.basePath,
               outDir: path.join(config.basePath, config.outDir),

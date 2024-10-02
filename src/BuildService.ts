@@ -286,7 +286,7 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
                     RTE.map(() => file),
                   ),
                 ),
-                RT.chainFirstW(({ left, right }) =>
+                RT.tap(({ left, right }) =>
                   pipe(
                     RT.Do,
                     RT.tap(() =>
@@ -309,38 +309,56 @@ export const BuildServiceLive: RTE.ReaderTaskEither<
             ),
             // Copy `srcDir` files to dist for source maps
             RTE.tap(() =>
-              Files.copyDirectory(
-                config.srcDir,
-                path.join(config.outDir, config.srcDir),
-                { recursive: true },
-              ),
+              config.emitDeclarationMaps
+                ? pipe(
+                    Files.copyDirectory(
+                      config.srcDir,
+                      path.join(
+                        config.basePath,
+                        config.outDir,
+                        Src.NEW_SOURCE_DIRECTORY,
+                        config.srcDir,
+                      ),
+                      { recursive: true },
+                    ),
+                    RTE.tapReaderTask(() =>
+                      Log.info(
+                        color.magenta('PCK') + color.whiteBright(' Copied source files'),
+                      ),
+                    ),
+                  )
+                : RTE.of(void 0),
             ),
-            RTE.tapReaderTask(() =>
-              Log.info(color.magenta('PCK') + color.whiteBright(' Copied source files')),
-            ),
-            // Copy non-`srcDir` entrypoints to dist
+            // Copy non-`srcDir` entrypoints to dist/source-files for source maps
             RTE.tap(() =>
-              pipe(
-                entrypoints,
-                RA.wither(RTE.ApplicativePar)(
-                  (
-                    entrypoint,
-                  ): RTE.ReaderTaskEither<
-                    Files.FileService,
-                    Files.FileServiceError,
-                    O.Option<void>
-                  > =>
-                    rootDirRegex.test(entrypoint)
-                      ? RTE.of(O.none)
-                      : pipe(
-                          Files.copyFile(
-                            entrypoint,
-                            path.join(config.basePath, config.outDir, entrypoint),
-                          ),
-                          RTE.as(O.of(void 0)),
-                        ),
-                ),
-              ),
+              config.emitDeclarationMaps
+                ? pipe(
+                    entrypoints,
+                    RA.wither(RTE.ApplicativePar)(
+                      (
+                        entrypoint,
+                      ): RTE.ReaderTaskEither<
+                        Files.FileService,
+                        Files.FileServiceError,
+                        O.Option<void>
+                      > =>
+                        rootDirRegex.test(entrypoint)
+                          ? RTE.of(O.none)
+                          : pipe(
+                              Files.copyFile(
+                                entrypoint,
+                                path.join(
+                                  config.basePath,
+                                  config.outDir,
+                                  Src.NEW_SOURCE_DIRECTORY,
+                                  entrypoint,
+                                ),
+                              ),
+                              RTE.as(O.of(void 0)),
+                            ),
+                    ),
+                  )
+                : RTE.of(void 0),
             ),
             RTE.tap(() =>
               config.emitTypes

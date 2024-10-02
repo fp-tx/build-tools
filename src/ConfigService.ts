@@ -87,6 +87,15 @@ export type ConfigParameters = {
   readonly srcDir?: string
 
   /**
+   * Whether to copy the source-directory to "source-files," along with declaration maps.
+   * This allows consumers of the library to control-click in VsCode or go-to-source and
+   * be taken to the raw source of the library.
+   *
+   * @default true
+   */
+  readonly emitDeclarationMaps?: boolean
+
+  /**
    * A list of package.json keys to omit from the copied file in dist
    *
    * @default ['devDependencies', 'scripts', 'lint-staged']
@@ -147,11 +156,13 @@ export class ConfigService {
     dtsConfig = 'tsconfig.json',
     dtsCompilerOverrides = {},
     bin = null,
+    emitDeclarationMaps = true,
   }: ConfigParameters) {
     this[ConfigServiceSymbol] = {
       buildType,
       srcDir,
       omittedPackageKeys,
+      emitDeclarationMaps,
       dtsConfig,
       copyFiles,
       basePath,
